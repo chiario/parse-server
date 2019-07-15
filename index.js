@@ -47,7 +47,7 @@ var api = new ParseServer({
   push: pushConfig,
   filesAdapter: filesAdapter,
   liveQuery: { classNames: ["Message"]},
-  serverURL: process.env.SERVER_URL || 'http://localhost/parse'  // needed for Parse Cloud and push notifications
+  serverURL: process.env.SERVER_URL || 'http://localhost:1337/parse'  // needed for Parse Cloud and push notifications
 });
 // Client-keys like the javascript key or the .NET key are not necessary with parse-server
 // If you wish you require them, you can set them as options in the initialization above:
