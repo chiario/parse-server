@@ -29,6 +29,21 @@ Parse.Cloud.define("createParty", async (request) => {
   return party;
 });
 
+/**
+ * This function returns the party the current user is part of
+ *
+ * There are no parameters for this function
+ * @return the current user's party if it exists, null if it does not
+ */
+Parse.Cloud.define("getCurrentParty", async (request) => {
+  const user = request.user;
+  try {
+    return await getPartyFromUser(user);
+  } catch(e) {
+    return null;
+  }
+});
+
 
 /**
  * This function deletes the current user's party if it exists and the user is
@@ -87,7 +102,7 @@ Parse.Cloud.define("addSong", async (request) => {
     // TODO: maybe like the song instead?
     throw 'Song is already in the playlist!';
   }
-  // TODO: return value?
+  return cachedSong;
 });
 
 /**
@@ -110,7 +125,7 @@ Parse.Cloud.define("removeSong", async (request) => {
   } else {
     throw 'Song is not in the playlist!';
   }
-  // TODO: return value?
+  return song;
 });
 
 /*******************************************************************************
