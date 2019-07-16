@@ -44,7 +44,6 @@ Parse.Cloud.define("getCurrentParty", async (request) => {
   }
 });
 
-
 /**
  * This function deletes the current user's party if it exists and the user is
  * the party's admin
@@ -126,6 +125,23 @@ Parse.Cloud.define("removeSong", async (request) => {
     throw 'Song is not in the playlist!';
   }
   return song;
+});
+
+/**
+ * This function removes a song from the current user's party
+ *
+ * There are no parameters for this function
+ * @throws error if the user is not in a party
+ */
+Parse.Cloud.define("getPlaylist", async (request) => {
+  const user = request.user;
+  const party = await getPartyFromUser(user);
+
+  const playlistQuery = new Parse.Query(PlaylistEntry);
+  playlistQuery.equalTo("party", party);
+  playlistQuery.descending("score");
+  playlistQuery.include("song");
+  return await playlistQuery.find();
 });
 
 /*******************************************************************************
