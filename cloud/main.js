@@ -11,6 +11,7 @@ const PlaylistEntry = Parse.Object.extend("PlaylistEntry");
  * This function creates a new party with the current user as the owner
  *
  * There are no parameters for this function
+ * @return the new party that was created
  */
 Parse.Cloud.define("createParty", async (request) => {
   const user = request.user;
@@ -76,6 +77,7 @@ Parse.Cloud.define("deleteParty", async (request) => {
  * @param spotifyId the song's Spotify ID from Spotify API
  * @throws error if the user is not in a party or the song is already in the
  *         current party's playlist
+* @return the playlist entry that was added
  */
 Parse.Cloud.define("addSong", async (request) => {
   const user = request.user;
@@ -96,12 +98,11 @@ Parse.Cloud.define("addSong", async (request) => {
     entry.set("song", cachedSong);
     entry.set("party", party);
     entry.set("score", 0); // TODO: calculate this
-    await entry.save();
+    return await entry.save();
   } else {
     // TODO: maybe like the song instead?
     throw 'Song is already in the playlist!';
   }
-  return cachedSong;
 });
 
 /**
@@ -110,6 +111,7 @@ Parse.Cloud.define("addSong", async (request) => {
  * @param spotifyId the song's Spotify ID from Spotify API
  * @throws error if the user is not the admin of their current party or if the
  *         song isn't in the party's playlist
+ * @return the playlist entry that was removed
  */
 Parse.Cloud.define("removeSong", async (request) => {
   const user = request.user;
@@ -120,11 +122,10 @@ Parse.Cloud.define("removeSong", async (request) => {
 
   if(await isSongInParty(song, party)) {
     const entry = await getPlaylistEntry(song, party);
-    await entry.destroy();
+    return await entry.destroy();
   } else {
     throw 'Song is not in the playlist!';
   }
-  return song;
 });
 
 /**
@@ -132,6 +133,7 @@ Parse.Cloud.define("removeSong", async (request) => {
  *
  * There are no parameters for this function
  * @throws error if the user is not in a party
+ * @return a list of playlist entries
  */
 Parse.Cloud.define("getPlaylist", async (request) => {
   const user = request.user;
