@@ -92,16 +92,16 @@ Parse.Cloud.define("addSong", async (request) => {
   // Save the song to the database
   const cachedSong = await saveSong(song);
 
-  if(await !isSongInParty(cachedSong, party)) {
+  if(await isSongInParty(cachedSong, party)) {
+    // TODO: maybe like the song instead?
+    throw 'Song is already in the playlist!';
+  } else {
     // Add song to party
     const entry = new PlaylistEntry();
     entry.set("song", cachedSong);
     entry.set("party", party);
     entry.set("score", 0); // TODO: calculate this
     return await entry.save();
-  } else {
-    // TODO: maybe like the song instead?
-    throw 'Song is already in the playlist!';
   }
 });
 
@@ -188,7 +188,7 @@ async function isSongInParty(song, party) {
   const playlistQuery = new Parse.Query(PlaylistEntry);
   playlistQuery.equalTo("party", party);
   playlistQuery.equalTo("song", song);
-  return await playlistQuery.count() != 0
+  return await playlistQuery.count() > 0
 }
 
 /**
