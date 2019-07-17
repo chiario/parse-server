@@ -13,7 +13,9 @@
     "kerberos": "~0.0.x",
     "ngrok": "^3.2.2",
     "parse": "~1.8.0",
-    "parse-server": "*"
+    "parse-server": "*",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7"
   },
   "scripts": {
     "start": "node index.js"

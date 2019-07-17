@@ -1,11 +1,9 @@
-// Android push test
-// To be used with:
-// https://github.com/codepath/ParsePushNotificationExample
-// See https://github.com/codepath/ParsePushNotificationExample/blob/master/app/src/main/java/com/test/MyCustomReceiver.java
+const spotify = require('./spotify.js')
 
 const Party = Parse.Object.extend("Party");
 const Song = Parse.Object.extend("Song");
 const PlaylistEntry = Parse.Object.extend("PlaylistEntry");
+const SpotifyToken = Parse.Object.extend("SpotifyToken");
 
 /**
  * This function creates a new party with the current user as the owner
@@ -146,6 +144,23 @@ Parse.Cloud.define("getPlaylist", async (request) => {
   return await playlistQuery.find();
 });
 
+/**
+ * This function searches spotify for a track
+ *
+ * @param query the search query
+ * @param [limit = 20] the number of results to get, default 20
+ * @throws error if the user is not in a party
+ * @return a list of songs returned by the search
+ */
+Parse.Cloud.define("search", async (request) => {
+  const token = await getSpotifyToken();
+  const query = request.params.query;
+  const limit = request.params.limit == null ? 20 : request.params.limit;
+
+  const result = await spotify.search(token, query, limit);
+  return await formatSearchResult(result);
+});
+
 /*******************************************************************************
 *                                                                              *
 *                               HELPER FUNCTIONS                               *
@@ -255,4 +270,64 @@ function verifyUserIsAdmin(user, party) {
   if(party.get("admin") == null || party.get("admin").id != user.id) {
     throw 'Current user is not their party\'s admin!'
   }
+}
+
+/**
+ * Gets a valid Spotify access token.  Checks to see if there is already a valid
+ * access token cached and if not, creates a new one.
+ *
+ * There are no paramters for this function.
+ * @return a spotify access token string
+ */
+async function getSpotifyToken() {
+  // Check to see if a token already exists
+  const tokenQuery = new Parse.Query(SpotifyToken);
+  tokenQuery.descending("createdAt");
+  if(await tokenQuery.count() > 0) {
+    const token = await tokenQuery.first();
+
+    // If a token already exists, see if it has expired yet
+    const currentDate = new Date();
+    const tokenDate = token.get("createdAt");
+    const diffSecs = (currentDate.getTime() - tokenDate.getTime()) / 1000;
+    // Refresh the token 1 minute before it expires
+    if(diffSecs < token.get("expiresIn") - 60) {
+      return token.get("value");
+    } else {
+      // Destroy the token if it is expired
+      await token.destroy();
+    }
+  }
+
+  // Otherwise, create a new token
+  const tokenRaw = await spotify.getAccessToken();
+  var token = new SpotifyToken();
+  token.set("value", tokenRaw.access_token);
+  token.set("type", tokenRaw.token_type);
+  token.set("expiresIn", tokenRaw.expires_in);
+  await token.save();
+  return token.get("value");
+}
+
+/**
+ * Formats the response from a Spotify search into an array of song objects.
+ *
+ * @param result the JSON result from a Spotify search request
+ * @return a list of song objects
+ */
+async function formatSearchResult(result) {
+  var formattedResult = [];
+  for(const track of result.tracks.items) {
+    // Create a new song from the result json
+    const song = new Song();
+    song.set("spotifyId", track.id);
+    song.set("artist", track.artists[0].name);
+    song.set("title", track.name);
+    song.set("album", track.album.name);
+    song.set("artUrl", track.album.images[0].url);
+
+    // Add it to the return array
+    formattedResult.push(await saveSong(song));
+  }
+  return formattedResult;
 }
