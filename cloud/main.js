@@ -4,6 +4,7 @@ const Party = Parse.Object.extend("Party");
 const Song = Parse.Object.extend("Song");
 const PlaylistEntry = Parse.Object.extend("PlaylistEntry");
 const SpotifyToken = Parse.Object.extend("SpotifyToken");
+const Like = Parse.Object.extend("Like");
 
 /**
  * This function creates a new party with the current user as the owner
@@ -176,6 +177,50 @@ Parse.Cloud.define("removeSong", async (request) => {
 });
 
 /**
+ * This function adds a the current user's like to a playlist entry
+ *
+ * @param entryId the playlist entry's object ID
+ * @throws error if the user is not the in a party, if the song isn't in the
+ * party's playlist, or if the user has already liked the song
+ * @return the updated playlist?
+ */
+Parse.Cloud.define("likeSong", async (request) => {
+  const user = request.user;
+  const party = await getPartyFromUser(user);
+  const entry = await getEntryById(request.params.entryId);
+
+  if(!await isEntryLikedByUser(entry, user)) {
+    const like = new Like();
+    like.set("user", user);
+    like.set("entry", entry);
+    return await like.save();
+  } else {
+    throw 'User has already liked the song!';
+  }
+});
+
+/**
+ * This removes the current user's like from a playlist entry
+ *
+ * @param entryId the playlist entry's object ID
+ * @throws error if the user is not the in a party, if the song isn't in the
+ * party's playlist, or if the user has not yet liked the song
+ * @return the updated playlist?
+ */
+Parse.Cloud.define("unlikeSong", async (request) => {
+  const user = request.user;
+  const party = await getPartyFromUser(user);
+  const entry = await getEntryById(request.params.entryId);
+
+  if(await isEntryLikedByUser(entry, user)) {
+    const like = await getLike(entry, user);
+    return await like.destroy();
+  } else {
+    throw 'User has not liked the song!';
+  }
+});
+
+/**
  * This function removes a song from the current user's party
  *
  * There are no parameters for this function
@@ -306,6 +351,22 @@ async function getPartyById(partyId) {
 }
 
 /**
+ * Returns a entry with the specified objectId.
+ *
+ * @param objectId the Parse objectId of the entry to obtain
+ * @return the entry from the database with the specified objectId
+ * @throws error if there is no entry in the database with the specified objectId
+ */
+async function getEntryById(entryId) {
+  const entryQuery = new Parse.Query(PlaylistEntry);
+  entryQuery.equalTo("objectId", entryId);
+  if(await entryQuery.count() == 0) {
+    throw "A playlist entry with that ID does not exist!";
+  }
+  return await entryQuery.first();
+}
+
+/**
  * If a song with the same spotifyId already exists in the database, returns a
  * reference to the existing song in the database.
  *
@@ -339,6 +400,36 @@ async function saveSong(song) {
  */
 function isUserAdmin(user, party) {
   return party.get("admin") != null && party.get("admin").id == user.id;
+}
+
+/**
+ * Checks if the user has liked a song
+ *
+ * @param entry the entry to whose likes to check
+ * @param user the user whose like to check
+ */
+async function isEntryLikedByUser(entry, user) {
+  const likeQuery = new Parse.Query(Like);
+  likeQuery.equalTo("entry", entry);
+  likeQuery.equalTo("user", user);
+  return await likeQuery.count() > 0;
+}
+
+/**
+ * Gets a like object from a user and entry
+ *
+ * @param entry get likes for this playlist entry
+ * @param user get likes for this user
+ * @throws an error if the like does not exist
+ */
+async function getLike(entry, user) {
+  const likeQuery = new Parse.Query(Like);
+  likeQuery.equalTo("entry", entry);
+  likeQuery.equalTo("user", user);
+  if(await likeQuery.count() == 0) {
+    throw "That like doesn't exist!";
+  }
+  return await likeQuery.first();
 }
 
 /**
