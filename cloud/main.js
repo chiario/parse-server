@@ -13,7 +13,7 @@ require('./songFunctions.js')
 Parse.Cloud.define("getPlaylist", async (request) => {
   const user = request.user;
   const party = await util.getPartyFromUser(user);
-  return await util.getPlaylistForParty(party);
+  return await util.getPlaylistForParty(user, party);
 });
 
 /**

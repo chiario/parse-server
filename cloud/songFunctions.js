@@ -66,7 +66,7 @@ Parse.Cloud.define("removeSong", async (request) => {
 /**
  * This function adds a the current user's like to a playlist entry
  *
- * @param entryId the playlist entry's object ID
+ * @param spotifyId the song's Spotify ID
  * @throws error if the user is not the in a party, if the song isn't in the
  * party's playlist, or if the user has already liked the song
  * @return the updated playlist?
@@ -74,7 +74,8 @@ Parse.Cloud.define("removeSong", async (request) => {
 Parse.Cloud.define("likeSong", async (request) => {
   const user = request.user;
   const party = await util.getPartyFromUser(user);
-  const entry = await util.getEntryById(request.params.entryId);
+  const song = await util.getSongById(request.params.spotifyId)
+  const entry = await util.getPlaylistEntry(song, party);
 
   if(!await util.isEntryLikedByUser(entry, user)) {
     const like = new parseObject.Like();
@@ -92,7 +93,7 @@ Parse.Cloud.define("likeSong", async (request) => {
 /**
  * This removes the current user's like from a playlist entry
  *
- * @param entryId the playlist entry's object ID
+ * @param spotifyId the song's Spotify ID
  * @throws error if the user is not the in a party, if the song isn't in the
  * party's playlist, or if the user has not yet liked the song
  * @return the updated playlist?
@@ -100,7 +101,8 @@ Parse.Cloud.define("likeSong", async (request) => {
 Parse.Cloud.define("unlikeSong", async (request) => {
   const user = request.user;
   const party = await util.getPartyFromUser(user);
-  const entry = await util.getEntryById(request.params.entryId);
+  const song = await util.getSongById(request.params.spotifyId)
+  const entry = await util.getPlaylistEntry(song, party);
 
   if(await util.isEntryLikedByUser(entry, user)) {
     const like = await util.getLike(entry, user);
