@@ -33,6 +33,7 @@ Parse.Cloud.define("addSong", async (request) => {
     const entry = new parseObject.PlaylistEntry();
     entry.set("song", cachedSong);
     entry.set("party", party);
+    await entry.save();
     await util.updateEntryScore(entry);
     return await util.getPlaylistForParty(user, party);
   }

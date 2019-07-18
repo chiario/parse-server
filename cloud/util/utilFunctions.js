@@ -260,14 +260,16 @@ module.exports = {
     playlistQuery.include("song");
     const playlist = await playlistQuery.find();
 
-    // TODO: preferably find less sketchy way of doing this
-    const result = [];
-    for(const entry of playlist) {
-      const entryJson = entry.toJSON();
-      entryJson.className = entry.className;
-      entryJson.isLikedByUser = await this.isEntryLikedByUser(entry, user);
-      result.push(entryJson);
-    }
-    return result;
+    return playlist;
+
+    // // TODO: preferably find less sketchy way of doing this
+    // const result = [];
+    // for(const entry of playlist) {
+    //   const entryJson = entry.toJSON();
+    //   entryJson.className = entry.className;
+    //   entryJson.isLikedByUser = await this.isEntryLikedByUser(entry, user);
+    //   result.push(entryJson);
+    // }
+    // return result;
   }
 }
