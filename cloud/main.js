@@ -1,10 +1,5 @@
 const spotify = require('./spotify.js')
-
-const Party = Parse.Object.extend("Party");
-const Song = Parse.Object.extend("Song");
-const PlaylistEntry = Parse.Object.extend("PlaylistEntry");
-const SpotifyToken = Parse.Object.extend("SpotifyToken");
-const Like = Parse.Object.extend("Like");
+const parseObject = require('./parseObject.js')
 
 /**
  * This function creates a new party with the current user as the owner
@@ -19,7 +14,7 @@ Parse.Cloud.define("createParty", async (request) => {
     throw 'Current user already has a party!'
   }
 
-  const party = new Party();
+  const party = new parseObject.Party();
   party.set("admin", user);
   await party.save();
 
@@ -128,7 +123,7 @@ Parse.Cloud.define("deleteParty", async (request) => {
 Parse.Cloud.define("addSong", async (request) => {
   const user = request.user;
   const party = await getPartyFromUser(user);
-  const song = new Song();
+  const song = new parseObject.Song();
   song.set("artist", request.params.artist);
   song.set("title", request.params.title);
   song.set("album", request.params.album);
@@ -143,7 +138,7 @@ Parse.Cloud.define("addSong", async (request) => {
     throw 'Song is already in the playlist!';
   } else {
     // Add song to party
-    const entry = new PlaylistEntry();
+    const entry = new parseObject.PlaylistEntry();
     entry.set("song", cachedSong);
     entry.set("party", party);
     entry.set("score", 0); // TODO: calculate this
@@ -190,7 +185,7 @@ Parse.Cloud.define("likeSong", async (request) => {
   const entry = await getEntryById(request.params.entryId);
 
   if(!await isEntryLikedByUser(entry, user)) {
-    const like = new Like();
+    const like = new parseObject.Like();
     like.set("user", user);
     like.set("entry", entry);
     return await like.save();
@@ -231,7 +226,7 @@ Parse.Cloud.define("getPlaylist", async (request) => {
   const user = request.user;
   const party = await getPartyFromUser(user);
 
-  const playlistQuery = new Parse.Query(PlaylistEntry);
+  const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
   playlistQuery.equalTo("party", party);
   playlistQuery.descending("score");
   playlistQuery.include("song");
@@ -276,7 +271,7 @@ async function getPartyFromUser(user) {
   }
 
   // get the user's current party
-  const query = new Parse.Query(Party);
+  const query = new Parse.Query(parseObject.Party);
   const party = await query.get(partyPointer.id);
 
   // check if party exists
@@ -294,7 +289,7 @@ async function getPartyFromUser(user) {
  * @return true if the party's playlist contains the song, false otherwise
  */
 async function isSongInParty(song, party) {
-  const playlistQuery = new Parse.Query(PlaylistEntry);
+  const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
   playlistQuery.equalTo("party", party);
   playlistQuery.equalTo("song", song);
   return await playlistQuery.count() > 0
@@ -308,7 +303,7 @@ async function isSongInParty(song, party) {
  * @return the playlist entry for the song in the specified party
  */
 async function getPlaylistEntry(song, party) {
-  const playlistQuery = new Parse.Query(PlaylistEntry);
+  const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
   playlistQuery.equalTo("party", party);
   playlistQuery.equalTo("song", song);
   if(await playlistQuery.count() == 0) {
@@ -326,7 +321,7 @@ async function getPlaylistEntry(song, party) {
  *         ID
  */
 async function getSongById(spotifyId) {
-  const songQuery = new Parse.Query(Song);
+  const songQuery = new Parse.Query(parseObject.Song);
   songQuery.equalTo("spotifyId", spotifyId);
   if(await songQuery.count() == 0) {
     throw "A song with that Spotify ID does not exist!";
@@ -342,7 +337,7 @@ async function getSongById(spotifyId) {
  * @throws error if there is no party in the database with the specified objectId
  */
 async function getPartyById(partyId) {
-  const partyQuery = new Parse.Query(Party);
+  const partyQuery = new Parse.Query(parseObject.Party);
   partyQuery.equalTo("objectId", partyId);
   if(await partyQuery.count() == 0) {
     throw "A party with that ID does not exist!";
@@ -358,7 +353,7 @@ async function getPartyById(partyId) {
  * @throws error if there is no entry in the database with the specified objectId
  */
 async function getEntryById(entryId) {
-  const entryQuery = new Parse.Query(PlaylistEntry);
+  const entryQuery = new Parse.Query(parseObject.PlaylistEntry);
   entryQuery.equalTo("objectId", entryId);
   if(await entryQuery.count() == 0) {
     throw "A playlist entry with that ID does not exist!";
@@ -378,7 +373,7 @@ async function getEntryById(entryId) {
  */
 async function saveSong(song) {
   // Check if a song with the same spotifyId is already in the database
-  const songQuery = new Parse.Query(Song);
+  const songQuery = new Parse.Query(parseObject.Song);
   songQuery.equalTo("spotifyId", song.get("spotifyId"));
   var cachedSong;
   if(await songQuery.count() == 0) {
@@ -409,7 +404,7 @@ function isUserAdmin(user, party) {
  * @param user the user whose like to check
  */
 async function isEntryLikedByUser(entry, user) {
-  const likeQuery = new Parse.Query(Like);
+  const likeQuery = new Parse.Query(parseObject.Like);
   likeQuery.equalTo("entry", entry);
   likeQuery.equalTo("user", user);
   return await likeQuery.count() > 0;
@@ -423,7 +418,7 @@ async function isEntryLikedByUser(entry, user) {
  * @throws an error if the like does not exist
  */
 async function getLike(entry, user) {
-  const likeQuery = new Parse.Query(Like);
+  const likeQuery = new Parse.Query(parseObject.Like);
   likeQuery.equalTo("entry", entry);
   likeQuery.equalTo("user", user);
   if(await likeQuery.count() == 0) {
@@ -441,7 +436,7 @@ async function getLike(entry, user) {
  */
 async function getSpotifyToken() {
   // Check to see if a token already exists
-  const tokenQuery = new Parse.Query(SpotifyToken);
+  const tokenQuery = new Parse.Query(parseObject.SpotifyToken);
   tokenQuery.descending("createdAt");
   if(await tokenQuery.count() > 0) {
     const token = await tokenQuery.first();
@@ -461,7 +456,7 @@ async function getSpotifyToken() {
 
   // Otherwise, create a new token
   const tokenRaw = await spotify.getAccessToken();
-  var token = new SpotifyToken();
+  var token = new parseObject.SpotifyToken();
   token.set("value", tokenRaw.access_token);
   token.set("type", tokenRaw.token_type);
   token.set("expiresIn", tokenRaw.expires_in);
@@ -479,7 +474,7 @@ async function formatSearchResult(result) {
   var formattedResult = [];
   for(const track of result.tracks.items) {
     // Create a new song from the result json
-    const song = new Song();
+    const song = new parseObject.Song();
     song.set("spotifyId", track.id);
     song.set("artist", track.artists[0].name);
     song.set("title", track.name);
