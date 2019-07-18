@@ -35,6 +35,7 @@ Parse.Cloud.define("addSong", async (request) => {
     entry.set("party", party);
     await entry.save();
     await util.updateEntryScore(entry);
+    await util.indicatePlaylistUpdated(party);
     return await util.getPlaylistForParty(user, party);
   }
 });
@@ -59,6 +60,7 @@ Parse.Cloud.define("removeSong", async (request) => {
   if(await util.isSongInParty(song, party)) {
     const entry = await util.getPlaylistEntry(song, party);
     await entry.destroy();
+    await util.indicatePlaylistUpdated(party);
     return await util.getPlaylistForParty(user, party);
   } else {
     throw 'Song is not in the playlist!';
@@ -86,6 +88,7 @@ Parse.Cloud.define("likeSong", async (request) => {
     await like.save();
 
     await util.updateEntryScore(entry);
+    await util.indicatePlaylistUpdated(party);
     return await util.getPlaylistForParty(user, party);
   } else {
     throw 'User has already liked the song!';
@@ -111,6 +114,7 @@ Parse.Cloud.define("unlikeSong", async (request) => {
     await like.destroy();
 
     await util.updateEntryScore(entry);
+    await util.indicatePlaylistUpdated(party);
     return await util.getPlaylistForParty(user, party);
   } else {
     throw 'User has not liked the song!';

@@ -1,7 +1,7 @@
 const parseObject = require('./util/parseObject.js')
 const util = require('./util/utilFunctions.js')
 require('./partyFunctions.js')
-require('./songFunctions.js')
+require('./playlistFunctions.js')
 
 /**
  * This function gets the playlist of the current user's party

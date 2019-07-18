@@ -269,5 +269,10 @@ module.exports = {
       result.push(Parse.Object.fromJSON(entryJson));
     }
     return result;
+  },
+
+  indicatePlaylistUpdated: async function(party) {
+    party.set("playlistLastUpdatedAt", new Date());
+    await party.save();
   }
 }
