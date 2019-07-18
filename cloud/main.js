@@ -44,6 +44,51 @@ Parse.Cloud.define("getCurrentParty", async (request) => {
 });
 
 /**
+ * This function adds the current user to an existing party
+ *
+ * @param partyId the Parse objectId of the party to join
+ * @return the party that was joined
+ * @throws an error if the current user is already in a party
+ */
+Parse.Cloud.define("joinParty", async (request) => {
+  const user = request.user;
+  const partyId = request.params.partyId;
+
+  if(user.get("currParty") != null) {
+    throw 'Current user already has a party!';
+  }
+
+  const party = await getPartyById(partyId)
+  user.set("currParty", party)
+  await user.save(null, {useMasterKey:true});
+
+  return party;
+});
+
+/**
+ * This function removes the current user from their party
+ *
+ * There are no parameters for this function
+ * @throws an error if the current user is not in a party or if the user is the
+ *         admin of their current party
+ */
+Parse.Cloud.define("leaveParty", async (request) => {
+  const user = request.user;
+
+  const party = await getPartyFromUser(user);
+
+  // check if user is not the party's admin
+  if(isUserAdmin(user, party)) {
+    throw "Cannot leave party if user is admin";
+  }
+
+  user.set("currParty", null);
+  await user.save(null, {useMasterKey:true});
+
+  return user;
+});
+
+/**
  * This function deletes the current user's party if it exists and the user is
  * the party's admin
  *
@@ -54,7 +99,9 @@ Parse.Cloud.define("deleteParty", async (request) => {
   const party = await getPartyFromUser(user);
 
   // check if user is party's admin
-  verifyUserIsAdmin(user, party);
+  if(!isUserAdmin(user, party)) {
+    throw "User is not the admin of their party!"
+  }
 
   // remove the party
   // TODO: loop through clients in the party and remove them
@@ -114,7 +161,9 @@ Parse.Cloud.define("addSong", async (request) => {
 Parse.Cloud.define("removeSong", async (request) => {
   const user = request.user;
   const party = await getPartyFromUser(user);
-  verifyUserIsAdmin(user, party);
+  if(!isUserAdmin(user, party)) {
+    throw "User is not the admin of their party!";
+  }
 
   const song = await getSongById(request.params.spotifyId);
 
@@ -235,6 +284,22 @@ async function getSongById(spotifyId) {
 }
 
 /**
+ * Returns a party with the specified objectId.
+ *
+ * @param partyId the Parse objectId of the party to obtain
+ * @return the party from the database with the specified objectId
+ * @throws error if there is no party in the database with the specified objectId
+ */
+async function getPartyById(partyId) {
+  const partyQuery = new Parse.Query(Party);
+  partyQuery.equalTo("objectId", partyId);
+  if(await partyQuery.count() == 0) {
+    throw "A party with that ID does not exist!";
+  }
+  return await partyQuery.first();
+}
+
+/**
  * If a song with the same spotifyId already exists in the database, returns a
  * reference to the existing song in the database.
  *
@@ -266,10 +331,8 @@ async function saveSong(song) {
  * @param party the party to check the user's privileges for
  * @throws error if the user is not the party's admin
  */
-function verifyUserIsAdmin(user, party) {
-  if(party.get("admin") == null || party.get("admin").id != user.id) {
-    throw 'Current user is not their party\'s admin!'
-  }
+function isUserAdmin(user, party) {
+  return party.get("admin") != null && party.get("admin").id == user.id;
 }
 
 /**
