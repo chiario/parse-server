@@ -83,7 +83,7 @@ Parse.Cloud.define("likeSong", async (request) => {
     await like.save();
 
     await util.updateEntryScore(entry);
-    return await util.getPlaylistForParty(party);
+    return await util.getPlaylistForParty(user, party);
   } else {
     throw 'User has already liked the song!';
   }
@@ -107,7 +107,7 @@ Parse.Cloud.define("unlikeSong", async (request) => {
     await like.destroy();
 
     await util.updateEntryScore(entry);
-    return await util.getPlaylistForParty(party);
+    return await util.getPlaylistForParty(user, party);
   } else {
     throw 'User has not liked the song!';
   }

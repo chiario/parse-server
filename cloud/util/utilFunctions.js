@@ -253,7 +253,7 @@ module.exports = {
     await entry.save();
   },
 
-  getPlaylistForParty: async function(party) {
+  getPlaylistForParty: async function(user, party) {
     const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
     playlistQuery.equalTo("party", party);
     playlistQuery.descending("score");
@@ -265,7 +265,7 @@ module.exports = {
     for(const entry of playlist) {
       const entryJson = entry.toJSON();
       entryJson.className = entry.className;
-      entryJson.isLikedByUser = true;
+      entryJson.isLikedByUser = await this.isEntryLikedByUser(entry, user);
       result.push(entryJson);
     }
     return result;
