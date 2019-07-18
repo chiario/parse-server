@@ -240,5 +240,34 @@ module.exports = {
       formattedResult.push(await this.saveSong(song));
     }
     return formattedResult;
+  },
+
+  updateEntryScore: async function(entry) {
+    const likeQuery = new Parse.Query(parseObject.Like);
+    likeQuery.equalTo("entry", entry);
+    const numLikes = await likeQuery.count();
+
+    //TODO: integrate other factors here
+
+    entry.set("score", numLikes);
+    await entry.save();
+  },
+
+  getPlaylistForParty: async function(party) {
+    const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
+    playlistQuery.equalTo("party", party);
+    playlistQuery.descending("score");
+    playlistQuery.include("song");
+    const playlist = await playlistQuery.find();
+
+    // TODO: preferably find less sketchy way of doing this
+    const result = [];
+    for(const entry of playlist) {
+      const entryJson = entry.toJSON();
+      entryJson.className = entry.className;
+      entryJson.isLikedByUser = true;
+      result.push(entryJson);
+    }
+    return result;
   }
 }

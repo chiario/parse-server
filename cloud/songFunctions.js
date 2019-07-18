@@ -27,15 +27,14 @@ Parse.Cloud.define("addSong", async (request) => {
   const cachedSong = await util.saveSong(song);
 
   if(await util.isSongInParty(cachedSong, party)) {
-    // TODO: maybe like the song instead?
     throw 'Song is already in the playlist!';
   } else {
     // Add song to party
     const entry = new parseObject.PlaylistEntry();
     entry.set("song", cachedSong);
     entry.set("party", party);
-    entry.set("score", 0); // TODO: calculate this
-    return await entry.save();
+    await util.updateEntryScore(entry);
+    return entry;
   }
 });
 
@@ -81,7 +80,10 @@ Parse.Cloud.define("likeSong", async (request) => {
     const like = new parseObject.Like();
     like.set("user", user);
     like.set("entry", entry);
-    return await like.save();
+    await like.save();
+
+    await util.updateEntryScore(entry);
+    return await util.getPlaylistForParty(party);
   } else {
     throw 'User has already liked the song!';
   }
@@ -102,25 +104,11 @@ Parse.Cloud.define("unlikeSong", async (request) => {
 
   if(await util.isEntryLikedByUser(entry, user)) {
     const like = await util.getLike(entry, user);
-    return await like.destroy();
+    await like.destroy();
+
+    await util.updateEntryScore(entry);
+    return await util.getPlaylistForParty(party);
   } else {
     throw 'User has not liked the song!';
   }
-});
-
-/**
- * This function searches spotify for a track
- *
- * @param query the search query
- * @param [limit = 20] the number of results to get, default 20
- * @throws error if the user is not in a party
- * @return a list of songs returned by the search
- */
-Parse.Cloud.define("search", async (request) => {
-  const token = await util.getSpotifyToken();
-  const query = request.params.query;
-  const limit = request.params.limit == null ? 20 : request.params.limit;
-
-  const result = await util.searchSpotify(token, query, limit);
-  return await util.formatSearchResult(result);
 });
