@@ -1,5 +1,5 @@
-const spotify = require('./spotify.js')
-const parseObject = require('./parseObject.js')
+const parseObject = require('./util/parseObject.js')
+const spotifyUtil = require('./util/spotifyUtil.js')
 
 /**
  * This function creates a new party with the current user as the owner
@@ -246,7 +246,7 @@ Parse.Cloud.define("search", async (request) => {
   const query = request.params.query;
   const limit = request.params.limit == null ? 20 : request.params.limit;
 
-  const result = await spotify.search(token, query, limit);
+  const result = await spotifyUtil.search(token, query, limit);
   return await formatSearchResult(result);
 });
 
@@ -455,7 +455,7 @@ async function getSpotifyToken() {
   }
 
   // Otherwise, create a new token
-  const tokenRaw = await spotify.getAccessToken();
+  const tokenRaw = await spotifyUtil.getAccessToken();
   var token = new parseObject.SpotifyToken();
   token.set("value", tokenRaw.access_token);
   token.set("type", tokenRaw.token_type);
