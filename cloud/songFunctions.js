@@ -34,7 +34,7 @@ Parse.Cloud.define("addSong", async (request) => {
     entry.set("song", cachedSong);
     entry.set("party", party);
     await util.updateEntryScore(entry);
-    return entry;
+    return await util.getPlaylistForParty(user, party);
   }
 });
 
@@ -55,9 +55,10 @@ Parse.Cloud.define("removeSong", async (request) => {
 
   const song = await util.getSongById(request.params.spotifyId);
 
-  if(await isSongInParty(song, party)) {
+  if(await util.isSongInParty(song, party)) {
     const entry = await util.getPlaylistEntry(song, party);
-    return await entry.destroy();
+    await entry.destroy();
+    return await util.getPlaylistForParty(user, party);
   } else {
     throw 'Song is not in the playlist!';
   }
