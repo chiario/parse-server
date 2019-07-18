@@ -283,7 +283,7 @@ async function getPlaylistEntry(song, party) {
 async function getSongById(spotifyId) {
   const songQuery = new Parse.Query(Song);
   songQuery.equalTo("spotifyId", spotifyId);
-  if(await partyQuery.count() == 0) {
+  if(await songQuery.count() == 0) {
     throw "A song with that Spotify ID does not exist!";
   }
   return await songQuery.first();
