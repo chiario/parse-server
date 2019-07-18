@@ -260,12 +260,15 @@ async function isSongInParty(song, party) {
  *
  * @param song the song to check
  * @param party the party whose playlist will be checked for the song
- * @return true if the party's playlist contains the song, false otherwise
+ * @return the playlist entry for the song in the specified party
  */
 async function getPlaylistEntry(song, party) {
   const playlistQuery = new Parse.Query(PlaylistEntry);
   playlistQuery.equalTo("party", party);
   playlistQuery.equalTo("song", song);
+  if(await playlistQuery.count() == 0) {
+    throw "That song is not in the party's playlist!";
+  }
   return await playlistQuery.first();
 }
 
@@ -280,6 +283,9 @@ async function getPlaylistEntry(song, party) {
 async function getSongById(spotifyId) {
   const songQuery = new Parse.Query(Song);
   songQuery.equalTo("spotifyId", spotifyId);
+  if(await partyQuery.count() == 0) {
+    throw "A song with that Spotify ID does not exist!";
+  }
   return await songQuery.first();
 }
 
