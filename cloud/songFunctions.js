@@ -121,6 +121,6 @@ Parse.Cloud.define("search", async (request) => {
   const query = request.params.query;
   const limit = request.params.limit == null ? 20 : request.params.limit;
 
-  const result = await spotifyUtil.search(token, query, limit);
+  const result = await util.searchSpotify(token, query, limit);
   return await util.formatSearchResult(result);
 });

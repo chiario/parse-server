@@ -1,5 +1,4 @@
 const parseObject = require('./util/parseObject.js')
-const spotifyUtil = require('./util/spotifyUtil.js')
 const util = require('./util/utilFunctions.js')
 require('./partyFunctions.js')
 require('./songFunctions.js')

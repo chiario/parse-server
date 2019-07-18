@@ -3,7 +3,8 @@
 *                               HELPER FUNCTIONS                               *
 *                                                                              *
  ******************************************************************************/
- const parseObject = require('./parseObject.js')
+const parseObject = require('./parseObject.js')
+const spotifyUtil = require('./spotifyUtil.js')
 
 module.exports = {
   /**
@@ -214,6 +215,10 @@ module.exports = {
     return token.get("value");
   },
 
+  searchSpotify: async function(token, query, limit) {
+    return await spotifyUtil.search(token, query, limit)
+  },
+
   /**
    * Formats the response from a Spotify search into an array of song objects.
    *
@@ -232,7 +237,7 @@ module.exports = {
       song.set("artUrl", track.album.images[0].url);
 
       // Add it to the return array
-      formattedResult.push(await saveSong(song));
+      formattedResult.push(await this.saveSong(song));
     }
     return formattedResult;
   }
