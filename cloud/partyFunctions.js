@@ -99,8 +99,16 @@ Parse.Cloud.define("deleteParty", async (request) => {
     throw "User is not the admin of their party!"
   }
 
+  // loop through clients in the party and remove them
+  const userQuery = new Parse.Query(Parse.User);
+  userQuery.equalTo("currParty", party);
+  const members = await userQuery.find();
+  for(const member of members) {
+    member.set("currParty", null);
+    await member.save(null, {useMasterKey:true});
+  }
+
   // remove the party
-  // TODO: loop through clients in the party and remove them
   user.set("currParty", null);
   await user.save(null, {useMasterKey:true});
   await party.destroy();
