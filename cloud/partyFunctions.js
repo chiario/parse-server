@@ -49,6 +49,22 @@ Parse.Cloud.define("getCurrentParty", async (request) => {
 });
 
 /**
+ * This function returns nearby parties ordered closest to farthest
+ *
+ * @param location the location to get parties near to
+ * @param [maxDistance = 0.5] the max distance in miles to search
+ * @return a list of parties within maxDistance miles of the location
+ */
+Parse.Cloud.define("getNearbyParties", async (request) => {
+  const location = request.params.location;
+  const maxDistance = request.params.maxDistance == null
+                            ? 0.5 : request.params.maxDistance;
+  const partyQuery = new Parse.Query(parseObject.Party);
+  partyQuery.withinMiles("location", location, maxDistance, true);
+  return await partyQuery.find();
+});
+
+/**
  * This function adds the current user to an existing party
  *
  * @param partyId the Parse objectId of the party to join
@@ -131,4 +147,16 @@ Parse.Cloud.define("deleteParty", async (request) => {
   await party.destroy();
 
   return user;
+});
+
+Parse.Cloud.define("updatePartyLocation", async (request) => {
+  const user = request.user;
+  const location = request.params.location;
+  const party = await util.getPartyFromUser(user);
+  if(!util.isUserAdmin(user, party)) {
+    throw "User is not the admin of their party!";
+  }
+
+  party.set("location", location);
+  return await party.save();
 });
