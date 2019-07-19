@@ -4,19 +4,6 @@ require('./partyFunctions.js')
 require('./playlistFunctions.js')
 
 /**
- * This function gets the playlist of the current user's party
- *
- * There are no parameters for this function
- * @throws error if the user is not in a party
- * @return a list of playlist entries
- */
-Parse.Cloud.define("getPlaylist", async (request) => {
-  const user = request.user;
-  const party = await util.getPartyFromUser(user);
-  return await util.getPlaylistForParty(user, party);
-});
-
-/**
  * This function searches spotify for a track
  *
  * @param query the search query

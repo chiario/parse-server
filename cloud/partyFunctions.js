@@ -1,3 +1,11 @@
+/*******************************************************************************
+*                                                                              *
+*                               PARTY FUNCTIONS                                *
+*                                                                              *
+*    This class contains all cloud functions that manipulate a party object    *
+*                                                                              *
+ ******************************************************************************/
+
 const util = require('./util/utilFunctions.js')
 const parseObject = require('./util/parseObject.js')
 

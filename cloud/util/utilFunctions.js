@@ -253,6 +253,13 @@ module.exports = {
     await entry.save();
   },
 
+  /**
+   * Gets a party's playlist and formats it for the current user.
+   *
+   * @param user the user who is making the request
+   * @param party the party the user is currently in
+   * @return the party's playlist as a list of playlist entries
+   */
   getPlaylistForParty: async function(user, party) {
     const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
     playlistQuery.equalTo("party", party);
@@ -276,8 +283,15 @@ module.exports = {
     await party.save();
   },
 
-  // TODO: make this not sketchy
+  /**
+   * Generates a 4 character long unique join code that can be used to join a
+   * party.
+   *
+   * This function has no paramters
+   * @return a 4 character long string
+   */
   generateJoinCode: async function() {
+    // TODO: make this not sketchy
     // Limit the amount of retries to 100
     for(var i = 0; i < 100; i++) {
       const joinCode = Math.random().toString(36).substr(2, 4);

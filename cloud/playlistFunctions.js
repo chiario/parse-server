@@ -1,3 +1,11 @@
+/*******************************************************************************
+*                                                                              *
+*                              PLAYLIST FUNCTIONS                              *
+*                                                                              *
+*  This class contains all cloud functions that manipulate a party's playlist  *
+*                                                                              *
+ ******************************************************************************/
+
 const util = require('./util/utilFunctions.js')
 const parseObject = require('./util/parseObject.js')
 
@@ -68,34 +76,6 @@ Parse.Cloud.define("removeSong", async (request) => {
 });
 
 /**
- * Gets the next song in the playlist, sets it as the currently playing song in the party,
- * then removes the song from the playlist and returns it
- *
- * @throws error if the user is not the admin of their current party or if the
- *         song isn't in the party's playlist
- * @return the song that was removed
- */
-Parse.Cloud.define("getNextSong", async (request) => {
-  const user = request.user;
-  const party = await util.getPartyFromUser(user);
-  if(!util.isUserAdmin(user, party)) {
-    throw "User is not the admin of their party!";
-  }
-
-  const playlist = await util.getPlaylistForParty(user, party);
-  const entry = playlist[0];
-
-  const song = entry.get("song");
-  await entry.destroy();
-  await util.indicatePlaylistUpdated(party);
-
-  party.set("curPlaying", song);
-  await party.save();
-
-  return song;
-});
-
-/**
  * This function adds a the current user's like to a playlist entry
  *
  * @param spotifyId the song's Spotify ID
@@ -147,4 +127,17 @@ Parse.Cloud.define("unlikeSong", async (request) => {
   } else {
     throw 'User has not liked the song!';
   }
+});
+
+/**
+ * This function gets the playlist of the current user's party
+ *
+ * There are no parameters for this function
+ * @throws error if the user is not in a party
+ * @return a list of playlist entries
+ */
+Parse.Cloud.define("getPlaylist", async (request) => {
+  const user = request.user;
+  const party = await util.getPartyFromUser(user);
+  return await util.getPlaylistForParty(user, party);
 });

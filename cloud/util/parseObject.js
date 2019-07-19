@@ -1,3 +1,10 @@
+/*******************************************************************************
+*                                                                              *
+*                                PARSE OBJECTS                                 *
+*                                                                              *
+*   This class contains all currently defined parse classes for consistency    *
+*                          across multiple files                               *
+ ******************************************************************************/
 const Party = Parse.Object.extend("Party");
 const Song = Parse.Object.extend("Song");
 const PlaylistEntry = Parse.Object.extend("PlaylistEntry");
