@@ -4,7 +4,7 @@
 *                                                                              *
  ******************************************************************************/
 const parseObject = require('./parseObject.js')
-const spotifyUtil = require('./spotifyUtil.js')
+const spotify = require('./spotifyAPI.js')
 
 module.exports = {
   /**
@@ -206,7 +206,7 @@ module.exports = {
     }
 
     // Otherwise, create a new token
-    const tokenRaw = await spotifyUtil.getAccessToken();
+    const tokenRaw = await spotify.getAccessToken();
     var token = new parseObject.SpotifyToken();
     token.set("value", tokenRaw.access_token);
     token.set("type", tokenRaw.token_type);
@@ -216,7 +216,7 @@ module.exports = {
   },
 
   searchSpotify: async function(token, query, limit) {
-    return await spotifyUtil.search(token, query, limit)
+    return await spotify.search(token, query, limit)
   },
 
   /**

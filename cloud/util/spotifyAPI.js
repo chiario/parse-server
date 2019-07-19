@@ -1,3 +1,10 @@
+/*******************************************************************************
+*                                                                              *
+*                                 SPOTIFY API                                  *
+*                                                                              *
+* This class contains all methods that directly interface with the Spotify API *
+*                                                                              *
+ ******************************************************************************/
 const request = require('request-promise-native'); // "Request" library
 
 module.exports = {
