@@ -22,8 +22,9 @@ module.exports = {
     }
 
     // get the user's current party
-    const query = new Parse.Query(parseObject.Party);
-    const party = await query.get(partyPointer.id);
+    const partyQuery = new Parse.Query(parseObject.Party);
+    partyQuery.include("currPlaying");
+    const party = await partyQuery.get(partyPointer.id);
 
     // check if party exists
     if(party == null) {
@@ -90,6 +91,7 @@ module.exports = {
   getPartyById: async function(partyId) {
     const partyQuery = new Parse.Query(parseObject.Party);
     partyQuery.equalTo("objectId", partyId);
+    partyQuery.include("currPlaying");
     if(await partyQuery.count() == 0) {
       throw "A party with that ID does not exist!";
     }
@@ -307,6 +309,7 @@ module.exports = {
   getPartyByJoinCode: async function(joinCode) {
     const partyQuery = new Parse.Query(parseObject.Party);
     partyQuery.equalTo("joinCode", joinCode);
+    partyQuery.include("currPlaying");
     const numParties = await partyQuery.count();
     if(numParties == 1) {
       return await partyQuery.first();
