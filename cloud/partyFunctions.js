@@ -16,6 +16,7 @@ Parse.Cloud.define("createParty", async (request) => {
 
   const party = new parseObject.Party();
   party.set("admin", user);
+  party.set("joinCode", await util.generateJoinCode());
   await party.save();
 
   user.set("currParty", party);
@@ -43,18 +44,26 @@ Parse.Cloud.define("getCurrentParty", async (request) => {
  * This function adds the current user to an existing party
  *
  * @param partyId the Parse objectId of the party to join
+ * @param joinCode the join code of the party to join
  * @return the party that was joined
  * @throws an error if the current user is already in a party
  */
 Parse.Cloud.define("joinParty", async (request) => {
   const user = request.user;
+  const joinCode = request.params.joinCode;
   const partyId = request.params.partyId;
 
   if(user.get("currParty") != null) {
     throw 'Current user already has a party!';
   }
 
-  const party = await util.getPartyById(partyId)
+  var party;
+  if(joinCode != null) {
+    party = await util.getPartyByJoinCode(joinCode);
+  } else {
+    party = await util.getPartyById(partyId);
+  }
+
   user.set("currParty", party)
   await user.save(null, {useMasterKey:true});
 

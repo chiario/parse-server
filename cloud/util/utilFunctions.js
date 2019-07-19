@@ -274,5 +274,32 @@ module.exports = {
   indicatePlaylistUpdated: async function(party) {
     party.set("playlistLastUpdatedAt", new Date());
     await party.save();
+  },
+
+  // TODO: make this not sketchy
+  generateJoinCode: async function() {
+    // Limit the amount of retries to 100
+    for(var i = 0; i < 100; i++) {
+      const joinCode = Math.random().toString(36).substr(2, 4);
+      const partyQuery = new Parse.Query(parseObject.Party);
+      partyQuery.equalTo("joinCode", joinCode);
+      if(await partyQuery.count() == 0) {
+        return joinCode;
+      }
+    }
+    throw "Could not generate a unique join code!";
+  },
+
+  getPartyByJoinCode: async function(joinCode) {
+    const partyQuery = new Parse.Query(parseObject.Party);
+    partyQuery.equalTo("joinCode", joinCode);
+    const numParties = await partyQuery.count();
+    if(numParties == 1) {
+      return partyQuery.first();
+    } else if(numParties == 0) {
+      throw "Could not find any parties with that join code!";
+    } else {
+      throw "More than 1 party has that join code.  Yikes!";
+    }
   }
 }
