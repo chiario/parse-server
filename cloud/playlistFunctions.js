@@ -100,7 +100,7 @@ Parse.Cloud.define("getNextSong", async (request) => {
   await entry.destroy();
   await util.indicatePlaylistUpdated(party);
 
-  party.set("curPlaying", song);
+  party.set("currPlaying", song);
   await party.save();
 
   return song;

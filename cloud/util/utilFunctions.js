@@ -309,7 +309,7 @@ module.exports = {
     partyQuery.equalTo("joinCode", joinCode);
     const numParties = await partyQuery.count();
     if(numParties == 1) {
-      return partyQuery.first();
+      return await partyQuery.first();
     } else if(numParties == 0) {
       throw "Could not find any parties with that join code!";
     } else {
