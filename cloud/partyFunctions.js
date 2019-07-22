@@ -44,6 +44,7 @@ Parse.Cloud.define("createParty", async (request) => {
 Parse.Cloud.define("setPartyName", async (request) => {
   const user = request.user;
   const party = await util.getPartyFromUser(user);
+  const name = request.params.name;
 
   if(!util.isUserAdmin(user, party)) {
     throw "Cannot change party name if user is not admin!";
@@ -52,7 +53,7 @@ Parse.Cloud.define("setPartyName", async (request) => {
   party.set("name", name);
   await party.save();
 
-  return user;
+  return name;
 });
 
 /**
