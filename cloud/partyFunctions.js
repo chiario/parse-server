@@ -12,7 +12,7 @@ const parseObject = require('./util/parseObject.js')
 /**
  * This function creates a new party with the current user as the owner
  *
- * There are no parameters for this function
+ * @param name the name of the party as set by the current user
  * @return the new party that was created
  */
 Parse.Cloud.define("createParty", async (request) => {
@@ -24,6 +24,7 @@ Parse.Cloud.define("createParty", async (request) => {
 
   const party = new parseObject.Party();
   party.set("admin", user);
+  party.set("name", name);
   party.set("joinCode", await util.generateJoinCode());
   await party.save();
 
@@ -31,6 +32,26 @@ Parse.Cloud.define("createParty", async (request) => {
   await user.save(null, {useMasterKey:true});
 
   return party;
+});
+
+/**
+ * This function sets the user's current party name
+ *
+ * @throws an error if the user isn't the admin of the current party
+ * @param name the new name of the party as set by the user
+**/
+Parse.Cloud.define("setPartyName", async (request) => {
+  const user = request.user;
+  const party = await util.getPartyFromUser(user);
+
+  if(!util.isUserAdmin(user, party)) {
+    throw "Cannot change party name if user is not admin!";
+  }
+
+  party.set("name", name);
+  await party.save();
+
+  return user;
 });
 
 /**
