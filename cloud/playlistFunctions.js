@@ -150,7 +150,7 @@ Parse.Cloud.define("unlikeSong", async (request) => {
     throw "That song is not in the playlist";
   }
 
-  const like = await util.g(entry, user);
+  const like = await util.getLike(entry, user);
   if(like == null) {
     throw 'User has not liked the song!';
   }
