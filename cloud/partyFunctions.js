@@ -17,6 +17,7 @@ const parseObject = require('./util/parseObject.js')
  */
 Parse.Cloud.define("createParty", async (request) => {
   const user = request.user;
+  const name = request.params.name;
 
   if(user.get("currParty") != null) {
     throw 'Current user already has a party!'
