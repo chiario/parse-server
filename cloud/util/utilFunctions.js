@@ -18,33 +18,14 @@ module.exports = {
     // check if the current user has a party
     const partyPointer = user.get("currParty");
     if(partyPointer == null) {
-      throw 'Current user does not have a party!'
+      return null;
     }
 
     // get the user's current party
     const partyQuery = new Parse.Query(parseObject.Party);
     partyQuery.include("currPlaying");
     const party = await partyQuery.get(partyPointer.id);
-
-    // check if party exists
-    if(party == null) {
-      throw 'Current user\'s party does not exist!'
-    }
     return party;
-  },
-
-  /**
-   * Checks if a song is already in a party's playlist
-   *
-   * @param song the song to check
-   * @param party the party whose playlist will be checked for the song
-   * @return true if the party's playlist contains the song, false otherwise
-   */
-  isSongInParty: async function(song, party) {
-    const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
-    playlistQuery.equalTo("party", party);
-    playlistQuery.equalTo("song", song);
-    return await playlistQuery.count() > 0
   },
 
   /**
@@ -59,9 +40,24 @@ module.exports = {
     playlistQuery.equalTo("party", party);
     playlistQuery.equalTo("song", song);
     if(await playlistQuery.count() == 0) {
-      throw "That song is not in the party's playlist!";
+      return null;
     }
     return await playlistQuery.first();
+  },
+
+  /**
+   * Returns a song in a party's playlist
+   *
+   * @param song the song to check
+   * @param party the party whose playlist will be checked for the song
+   * @return the playlist entry for the song in the specified party
+   */
+  getEntryBySpotifyId: async function(spotifyId, party) {
+    const song = await this.getSongById(spotifyId);
+    if(song == null) {
+      return null;
+    }
+    return await this.getPlaylistEntry(song, party);
   },
 
   /**
@@ -76,42 +72,9 @@ module.exports = {
     const songQuery = new Parse.Query(parseObject.Song);
     songQuery.equalTo("spotifyId", spotifyId);
     if(await songQuery.count() == 0) {
-      throw "A song with that Spotify ID does not exist!";
+      return null;
     }
     return await songQuery.first();
-  },
-
-  /**
-   * Returns a party with the specified objectId.
-   *
-   * @param partyId the Parse objectId of the party to obtain
-   * @return the party from the database with the specified objectId
-   * @throws error if there is no party in the database with the specified objectId
-   */
-  getPartyById: async function(partyId) {
-    const partyQuery = new Parse.Query(parseObject.Party);
-    partyQuery.equalTo("objectId", partyId);
-    partyQuery.include("currPlaying");
-    if(await partyQuery.count() == 0) {
-      throw "A party with that ID does not exist!";
-    }
-    return await partyQuery.first();
-  },
-
-  /**
-   * Returns a entry with the specified objectId.
-   *
-   * @param objectId the Parse objectId of the entry to obtain
-   * @return the entry from the database with the specified objectId
-   * @throws error if there is no entry in the database with the specified objectId
-   */
-  getEntryById: async function(entryId) {
-    const entryQuery = new Parse.Query(parseObject.PlaylistEntry);
-    entryQuery.equalTo("objectId", entryId);
-    if(await entryQuery.count() == 0) {
-      throw "A playlist entry with that ID does not exist!";
-    }
-    return await entryQuery.first();
   },
 
   /**
@@ -175,7 +138,7 @@ module.exports = {
     likeQuery.equalTo("entry", entry);
     likeQuery.equalTo("user", user);
     if(await likeQuery.count() == 0) {
-      throw "That like doesn't exist!";
+      return null;
     }
     return await likeQuery.first();
   },
@@ -227,7 +190,27 @@ module.exports = {
    * @param result the JSON result from a Spotify search request
    * @return a list of song objects
    */
-  formatSearchResult: async function(result) {
+  getCachedSearch: async function(query) {
+    const cacheQuery = new Parse.Query(parseObject.SearchCache);
+    cacheQuery.equalTo("query", query);
+    cacheQuery.include("song");
+
+    const results = await cacheQuery.find();
+
+    var formattedResult = [];
+    for(const cachedResult of results) {
+      formattedResult.push(cachedResult.get("song"));
+    }
+    return formattedResult;
+  },
+
+  /**
+   * Formats the response from a Spotify search into an array of song objects.
+   *
+   * @param result the JSON result from a Spotify search request
+   * @return a list of song objects
+   */
+  formatSearchResult: async function(result, query) {
     var formattedResult = [];
     for(const track of result.tracks.items) {
       // Create a new song from the result json
@@ -239,7 +222,20 @@ module.exports = {
       song.set("artUrl", track.album.images[0].url);
 
       // Add it to the return array
-      formattedResult.push(await this.saveSong(song));
+      const cachedSong = await this.saveSong(song);
+      formattedResult.push(cachedSong);
+
+      const cacheQuery = new Parse.Query(parseObject.SearchCache);
+      cacheQuery.equalTo("query", query);
+      cacheQuery.equalTo("song", cachedSong);
+      const cacheCount = await cacheQuery.count();
+      if(cacheCount == 0) {
+        const cache = new parseObject.SearchCache();
+        cache.set("query", query);
+        cache.set("song", cachedSong);
+        await cache.save();
+      }
+
     }
     return formattedResult;
   },
@@ -314,7 +310,7 @@ module.exports = {
     if(numParties == 1) {
       return await partyQuery.first();
     } else if(numParties == 0) {
-      throw "Could not find any parties with that join code!";
+      return null;
     } else {
       throw "More than 1 party has that join code.  Yikes!";
     }
