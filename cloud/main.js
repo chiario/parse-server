@@ -16,6 +16,11 @@ Parse.Cloud.define("search", async (request) => {
   const query = request.params.query;
   const limit = request.params.limit == null ? 20 : request.params.limit;
 
+  const cachedResult = await util.getCachedSearch(query);
+  if(cachedResult.length > 0) {
+    return cachedResult;
+  }
+
   const result = await util.searchSpotify(token, query, limit);
-  return await util.formatSearchResult(result);
+  return await util.formatSearchResult(result, query);
 });

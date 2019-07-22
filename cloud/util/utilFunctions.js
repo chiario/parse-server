@@ -190,7 +190,27 @@ module.exports = {
    * @param result the JSON result from a Spotify search request
    * @return a list of song objects
    */
-  formatSearchResult: async function(result) {
+  getCachedSearch: async function(query) {
+    const cacheQuery = new Parse.Query(parseObject.SearchCache);
+    cacheQuery.equalTo("query", query);
+    cacheQuery.include("song");
+
+    const results = await cacheQuery.find();
+
+    var formattedResult = [];
+    for(const cachedResult of results) {
+      formattedResult.push(cachedResult.get("song"));
+    }
+    return formattedResult;
+  },
+
+  /**
+   * Formats the response from a Spotify search into an array of song objects.
+   *
+   * @param result the JSON result from a Spotify search request
+   * @return a list of song objects
+   */
+  formatSearchResult: async function(result, query) {
     var formattedResult = [];
     for(const track of result.tracks.items) {
       // Create a new song from the result json
@@ -202,7 +222,20 @@ module.exports = {
       song.set("artUrl", track.album.images[0].url);
 
       // Add it to the return array
-      formattedResult.push(await this.saveSong(song));
+      const cachedSong = await this.saveSong(song);
+      formattedResult.push(cachedSong);
+
+      const cacheQuery = new Parse.Query(parseObject.SearchCache);
+      cacheQuery.equalTo("query", query);
+      cacheQuery.equalTo("song", cachedSong);
+      const cacheCount = await cacheQuery.count();
+      if(cacheCount == 0) {
+        const cache = new parseObject.SearchCache();
+        cache.set("query", query);
+        cache.set("song", cachedSong);
+        await cache.save();
+      }
+
     }
     return formattedResult;
   },
