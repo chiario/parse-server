@@ -34,18 +34,18 @@ Parse.Cloud.define("addSong", async (request) => {
   // Save the song to the database
   const cachedSong = await util.saveSong(song);
 
-  if(await util.isSongInParty(cachedSong, party)) {
+  if(await util.getPlaylistEntry(cachedSong, party)) {
     throw 'Song is already in the playlist!';
-  } else {
-    // Add song to party
-    const entry = new parseObject.PlaylistEntry();
-    entry.set("song", cachedSong);
-    entry.set("party", party);
-    await entry.save();
-    await util.updateEntryScore(entry);
-    await util.indicatePlaylistUpdated(party);
-    return await util.getPlaylistForParty(user, party);
   }
+
+  // Add song to party
+  const entry = new parseObject.PlaylistEntry();
+  entry.set("song", cachedSong);
+  entry.set("party", party);
+  await entry.save();
+  await util.updateEntryScore(entry);
+  await util.indicatePlaylistUpdated(party);
+  return await util.getPlaylistForParty(user, party);
 });
 
 /**
@@ -63,16 +63,14 @@ Parse.Cloud.define("removeSong", async (request) => {
     throw "User is not the admin of their party!";
   }
 
-  const song = await util.getSongById(request.params.spotifyId);
-
-  if(await util.isSongInParty(song, party)) {
-    const entry = await util.getPlaylistEntry(song, party);
-    await entry.destroy();
-    await util.indicatePlaylistUpdated(party);
-    return await util.getPlaylistForParty(user, party);
-  } else {
+  const entry = await util.getEntryBySpotifyId(request.params.spotifyId, party);
+  if(entry == null) {
     throw 'Song is not in the playlist!';
   }
+
+  await entry.destroy();
+  await util.indicatePlaylistUpdated(party);
+  return await util.getPlaylistForParty(user, party);
 });
 
 /**
@@ -117,8 +115,10 @@ Parse.Cloud.define("getNextSong", async (request) => {
 Parse.Cloud.define("likeSong", async (request) => {
   const user = request.user;
   const party = await util.getPartyFromUser(user);
-  const song = await util.getSongById(request.params.spotifyId)
-  const entry = await util.getPlaylistEntry(song, party);
+  const entry = await util.getEntryBySpotifyId(request.params.spotifyId, party);
+  if(entry == null) {
+    throw "That song is not in the playlist";
+  }
 
   if(!await util.isEntryLikedByUser(entry, user)) {
     const like = new parseObject.Like();
@@ -145,19 +145,20 @@ Parse.Cloud.define("likeSong", async (request) => {
 Parse.Cloud.define("unlikeSong", async (request) => {
   const user = request.user;
   const party = await util.getPartyFromUser(user);
-  const song = await util.getSongById(request.params.spotifyId)
-  const entry = await util.getPlaylistEntry(song, party);
+  const entry = await util.getEntryBySpotifyId(request.params.spotifyId, party);
+  if(entry == null) {
+    throw "That song is not in the playlist";
+  }
 
-  if(await util.isEntryLikedByUser(entry, user)) {
-    const like = await util.getLike(entry, user);
-    await like.destroy();
-
-    await util.updateEntryScore(entry);
-    await util.indicatePlaylistUpdated(party);
-    return await util.getPlaylistForParty(user, party);
-  } else {
+  const like = await util.g(entry, user);
+  if(like == null) {
     throw 'User has not liked the song!';
   }
+
+  await like.destroy();
+  await util.updateEntryScore(entry);
+  await util.indicatePlaylistUpdated(party);
+  return await util.getPlaylistForParty(user, party);
 });
 
 /**

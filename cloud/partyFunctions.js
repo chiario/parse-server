@@ -63,11 +63,7 @@ Parse.Cloud.define("setPartyName", async (request) => {
  */
 Parse.Cloud.define("getCurrentParty", async (request) => {
   const user = request.user;
-  try {
-    return await util.getPartyFromUser(user);
-  } catch(e) {
-    return null;
-  }
+  return await util.getPartyFromUser(user);
 });
 
 /**
@@ -97,22 +93,18 @@ Parse.Cloud.define("getNearbyParties", async (request) => {
 Parse.Cloud.define("joinParty", async (request) => {
   const user = request.user;
   const joinCode = request.params.joinCode;
-  const partyId = request.params.partyId;
 
   if(user.get("currParty") != null) {
     throw 'Current user already has a party!';
   }
 
-  var party;
-  if(joinCode != null) {
-    party = await util.getPartyByJoinCode(joinCode);
-  } else {
-    party = await util.getPartyById(partyId);
+  const party = await util.getPartyByJoinCode(joinCode);
+  if(party == null) {
+    throw "A party with that join code does not exist!";
   }
 
   user.set("currParty", party)
   await user.save(null, {useMasterKey:true});
-
   return party;
 });
 
@@ -127,6 +119,9 @@ Parse.Cloud.define("leaveParty", async (request) => {
   const user = request.user;
 
   const party = await util.getPartyFromUser(user);
+  if(party == null) {
+    throw "User does not have a party";
+  }
 
   // check if user is not the party's admin
   if(util.isUserAdmin(user, party)) {
