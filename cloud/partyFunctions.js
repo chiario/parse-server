@@ -54,7 +54,7 @@ Parse.Cloud.define("setPartyName", async (request) => {
   party.set("name", name);
   await party.save();
 
-  return name;
+  return party;
 });
 
 /**
@@ -194,20 +194,5 @@ Parse.Cloud.define("setLocationEnabled", async (request) => {
   }
   party.set("locationEnabled", locationEnabled);
   await party.save();
-  return user;
-})
-
-/**
- * This function returns the current party's setting for location enabling
- *
- * @return the boolean value of location enabling
-**/
-Parse.Cloud.define("getLocationEnabled", async (request) => {
-  const user = request.user
-  const party = await util.getPartyFromUser(user);
-
-  const partyQuery = new Parse.Query(parseObject.Party);
-  partyQuery.include("locationEnabled");
-  const permissions = await partyQuery.get(party.id);
-  return permissions;
+  return party;
 })
