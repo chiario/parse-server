@@ -183,15 +183,16 @@ Parse.Cloud.define("updatePartyLocation", async (request) => {
 /**
  * This function sets the current party's location enabling to true or false
  *
- * @param permissions the boolean value to set location enabling to
+ * @param locationEnabled the boolean value to set location enabling to
 **/
 Parse.Cloud.define("setLocationEnabled", async (request) => {
   const user = request.user
   const party = await util.getPartyFromUser(user);
-  const permissions = request.params.permissions;
+  const locationEnabled = request.params.locationEnabled;
   if (!util.isUserAdmin(user, party)) {
     throw "User is not the admin of their party!";
   }
-  party.set("locationEnabled", permissions);
-  return true;
+  party.set("locationEnabled", locationEnabled);
+  await party.save();
+  return user;
 })
