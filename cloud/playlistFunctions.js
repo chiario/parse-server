@@ -125,7 +125,7 @@ Parse.Cloud.define("setCurrentlyPlaying", async (request) => {
     throw "That song is not in the playlist!";
   }
 
-  const song = entry.get("song");
+  const song = await entry.get("song").fetch();
   await entry.destroy();
   await util.indicatePlaylistUpdated(party);
 
