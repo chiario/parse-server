@@ -105,6 +105,37 @@ Parse.Cloud.define("getNextSong", async (request) => {
 });
 
 /**
+ * Sets the song with the given Spotify ID as the currently playing song in
+ * the party, then removes the song from the playlist and returns it
+ *
+ * @param spotifyId the Spotify ID of the song to play
+ * @throws error if the user is not the admin of their current party or if the
+ *         song isn't in the party's playlist
+ * @return the song that was removed
+ */
+Parse.Cloud.define("setCurrentlyPlaying", async (request) => {
+  const user = request.user;
+  const party = await util.getPartyFromUser(user);
+  if(!util.isUserAdmin(user, party)) {
+    throw "User is not the admin of their party!";
+  }
+
+  const entry = await util.getEntryBySpotifyId(request.params.spotifyId, party);
+  if(entry == null) {
+    throw "That song is not in the playlist!";
+  }
+
+  const song = entry.get("song");
+  await entry.destroy();
+  await util.indicatePlaylistUpdated(party);
+
+  party.set("currPlaying", song);
+  await party.save();
+
+  return song;
+});
+
+/**
  * This function adds a the current user's like to a playlist entry
  *
  * @param spotifyId the song's Spotify ID
