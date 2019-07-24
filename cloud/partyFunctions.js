@@ -215,6 +215,6 @@ Parse.Cloud.define("getPartyUserCount", async (request) => {
   const user = request.user;
   const party = await util.getPartyFromUser(user);
   const countQuery = new Parse.Query(Parse.User);
-  constQuery.equalTo("party", party);
+  countQuery.equalTo("party", party);
   return await countQuery.count();
 })
