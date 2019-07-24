@@ -180,6 +180,17 @@ Parse.Cloud.define("updatePartyLocation", async (request) => {
   return await party.save();
 });
 
+Parse.Cloud.define("clearPartyLocation", async (request) => {
+  const user = request.user;
+  const party = await util.getPartyFromUser(user);
+  if (!util.isUserAdmin(user, party)) {
+    throw "User is not the admin of their party!";
+  }
+
+  party.set("location", null);
+  return await party.save();
+})
+
 /**
  * This function sets the current party's location enabling to true or false
  *
