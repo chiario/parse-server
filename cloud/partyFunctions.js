@@ -197,7 +197,7 @@ Parse.Cloud.define("clearPartyLocation", async (request) => {
  * @param locationEnabled the boolean value to set location enabling to
 **/
 Parse.Cloud.define("setLocationEnabled", async (request) => {
-  const user = request.user
+  const user = request.user;
   const party = await util.getPartyFromUser(user);
   const locationEnabled = request.params.locationEnabled;
   if (!util.isUserAdmin(user, party)) {
@@ -206,4 +206,15 @@ Parse.Cloud.define("setLocationEnabled", async (request) => {
   party.set("locationEnabled", locationEnabled);
   await party.save();
   return party;
+})
+
+/**
+ * This function counts the number of users in the user's party
+ */
+Parse.Cloud.define("getPartyUserCount", async (request) => {
+  const user = request.user;
+  const party = await util.getPartyFromUser(user);
+  const countQuery = new Parse.Query(Parse.User);
+  constQuery.equalTo("party", party);
+  return await countQuery.count();
 })
