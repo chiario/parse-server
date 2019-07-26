@@ -190,10 +190,11 @@ module.exports = {
    * @param result the JSON result from a Spotify search request
    * @return a list of song objects
    */
-  getCachedSearch: async function(query) {
+  getCachedSearch: async function(query, limit) {
     const cacheQuery = new Parse.Query(parseObject.SearchCache);
     cacheQuery.equalTo("query", query);
     cacheQuery.include("song");
+    cacheQuery.limit(limit);
 
     const results = await cacheQuery.find();
 
