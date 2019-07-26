@@ -46,7 +46,7 @@ var api = new ParseServer({
   masterKey: process.env.MASTER_KEY || 'password', //Add your master key here. Keep it secret!
   push: pushConfig,
   filesAdapter: filesAdapter,
-  liveQuery: { classNames: ["Party"]},
+  liveQuery: { classNames: ["Party", "_User"]},
   serverURL: process.env.SERVER_URL || 'http://localhost:1337/parse'  // needed for Parse Cloud and push notifications
 });
 // Client-keys like the javascript key or the .NET key are not necessary with parse-server
