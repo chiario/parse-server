@@ -214,9 +214,15 @@ Parse.Cloud.define("savePartySettings", async (request) => {
   if(!util.isUserAdmin(user, party)) {
     throw "User is not the admin of their party!";
   }
-  party.set("locationEnabled", request.params.locationEnabled);
-  party.set("name", request.params.name);
-  await party.save()
+  const locationEnabled = request.params.locationEnabled
+  if(locationEnabled != null) {
+    party.set("locationEnabled", locationEnabled);
+  }
+  const name = request.params.name;
+  if(name != null) {
+    party.set("name", request.params.name);
+  }
+  await party.save();
   return party;
 })
 
