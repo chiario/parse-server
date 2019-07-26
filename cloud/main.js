@@ -20,11 +20,10 @@ Parse.Cloud.define("search", async (request) => {
 
   if(useCache) {
     const cachedResult = await util.getCachedSearch(query, limit);
-    return cachedResult;
-  } else {
-    const result = await util.searchSpotify(token, query, limit);
-    return await util.formatSearchResult(result, query);
+    if(cachedResult.length > 0) return cachedResult;
   }
+  const result = await util.searchSpotify(token, query, limit);
+  return await util.formatSearchResult(result, query);
 });
 
 Parse.Cloud.job("buildSearchCache", async (request) =>  {
