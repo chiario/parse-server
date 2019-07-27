@@ -121,19 +121,20 @@ Parse.Cloud.define("setCurrentlyPlaying", async (request) => {
   }
 
   const entry = await util.getEntryBySpotifyId(request.params.spotifyId, party);
+  let song;
   if(entry == null) {
-    throw "That song is not in the playlist!";
+    await song = util.getSongById(request.params.spotifyId);
+  } else {
+    const song = await entry.get("song").fetch();
+    await entry.destroy();
+    await util.indicatePlaylistUpdated(party);
   }
-
-  const song = await entry.get("song").fetch();
-  await entry.destroy();
-  await util.indicatePlaylistUpdated(party);
 
   party.set("currPlaying", song);
   await party.save();
 
   return song;
-});
+}); //TODO - this shouldn't throw an error if song isn't in playlist!
 
 /**
  * This function adds a the current user's like to a playlist entry
