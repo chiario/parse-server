@@ -124,11 +124,12 @@ Parse.Cloud.define("setCurrentlyPlaying", async (request) => {
   let song;
   if(entry == null) {
     song = await util.getSongById(request.params.spotifyId);
+
   } else {
     const song = await entry.get("song").fetch();
     await entry.destroy();
-    await util.indicatePlaylistUpdated(party);
   }
+  await util.indicatePlaylistUpdated(party);
 
   party.set("currPlaying", song);
   await party.save();
