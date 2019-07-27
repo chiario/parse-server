@@ -126,7 +126,7 @@ Parse.Cloud.define("setCurrentlyPlaying", async (request) => {
     song = await util.getSongById(request.params.spotifyId);
 
   } else {
-    const song = await entry.get("song").fetch();
+    song = await entry.get("song").fetch();
     await entry.destroy();
   }
   await util.indicatePlaylistUpdated(party);
