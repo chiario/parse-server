@@ -52,7 +52,7 @@ Parse.Cloud.job("buildSearchCache", async (request) =>  {
 async function getAllSearchCaches() {
   var result = [];
   var skip = false;
-  const chunk_size = 10;
+  const chunk_size = 1000;
 
   while(true) {
     // Get the next chunk
