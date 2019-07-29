@@ -39,9 +39,6 @@ module.exports = {
     const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
     playlistQuery.equalTo("party", party);
     playlistQuery.equalTo("song", song);
-    if(await playlistQuery.count() == 0) {
-      return null;
-    }
     return await playlistQuery.first();
   },
 
@@ -71,9 +68,6 @@ module.exports = {
   getSongById: async function(spotifyId) {
     const songQuery = new Parse.Query(parseObject.Song);
     songQuery.equalTo("spotifyId", spotifyId);
-    if(await songQuery.count() == 0) {
-      return null;
-    }
     return await songQuery.first();
   },
 
@@ -91,13 +85,10 @@ module.exports = {
     // Check if a song with the same spotifyId is already in the database
     const songQuery = new Parse.Query(parseObject.Song);
     songQuery.equalTo("spotifyId", song.get("spotifyId"));
-    var cachedSong;
-    if(await songQuery.count() == 0) {
+    var cachedSong = await songQuery.first();
+    if(!cachedSong) {
       // If not, save the song to the database
       cachedSong = await song.save();
-    } else {
-      // If so, return the song already in the database
-      cachedSong = await songQuery.first();
     }
     return cachedSong;
   },
@@ -123,7 +114,7 @@ module.exports = {
     const likeQuery = new Parse.Query(parseObject.Like);
     likeQuery.equalTo("entry", entry);
     likeQuery.equalTo("user", user);
-    return await likeQuery.count() > 0;
+    return await likeQuery.first();
   },
 
   /**
@@ -137,9 +128,6 @@ module.exports = {
     const likeQuery = new Parse.Query(parseObject.Like);
     likeQuery.equalTo("entry", entry);
     likeQuery.equalTo("user", user);
-    if(await likeQuery.count() == 0) {
-      return null;
-    }
     return await likeQuery.first();
   },
 
@@ -154,9 +142,8 @@ module.exports = {
     // Check to see if a token already exists
     const tokenQuery = new Parse.Query(parseObject.SpotifyToken);
     tokenQuery.descending("createdAt");
-    if(await tokenQuery.count() > 0) {
-      const token = await tokenQuery.first();
-
+    var token = await tokenQuery.first();
+    if(token) {
       // If a token already exists, see if it has expired yet
       const currentDate = new Date();
       const tokenDate = token.get("createdAt");
@@ -172,7 +159,7 @@ module.exports = {
 
     // Otherwise, create a new token
     const tokenRaw = await spotify.getAccessToken();
-    var token = new parseObject.SpotifyToken();
+    token = new parseObject.SpotifyToken();
     token.set("value", tokenRaw.access_token);
     token.set("type", tokenRaw.token_type);
     token.set("expiresIn", tokenRaw.expires_in);
@@ -210,6 +197,7 @@ module.exports = {
    *
    * @param result the JSON result from a Spotify search request
    * @return a list of song objects
+   * todo: break this up
    */
   formatSearchResult: async function(result, query) {
     var formattedResult = [];
@@ -229,8 +217,7 @@ module.exports = {
       const cacheQuery = new Parse.Query(parseObject.SearchCache);
       cacheQuery.equalTo("query", query);
       cacheQuery.equalTo("song", cachedSong);
-      const cacheCount = await cacheQuery.count();
-      if(cacheCount == 0) {
+      if(!await cacheQuery.first()) {
         const cache = new parseObject.SearchCache();
         cache.set("query", query);
         cache.set("song", cachedSong);
@@ -244,6 +231,8 @@ module.exports = {
   updateEntryScore: async function(entry) {
     const likeQuery = new Parse.Query(parseObject.Like);
     likeQuery.equalTo("entry", entry);
+
+    // TODO: add a like count entry to avoid this operation
     const numLikes = await likeQuery.count();
 
     //TODO: integrate other factors here
@@ -296,7 +285,7 @@ module.exports = {
       const joinCode = Math.random().toString(36).substr(2, 4);
       const partyQuery = new Parse.Query(parseObject.Party);
       partyQuery.equalTo("joinCode", joinCode);
-      if(await partyQuery.count() == 0) {
+      if(!await partyQuery.first()) {
         return joinCode;
       }
     }
@@ -307,13 +296,6 @@ module.exports = {
     const partyQuery = new Parse.Query(parseObject.Party);
     partyQuery.equalTo("joinCode", joinCode);
     partyQuery.include("currPlaying");
-    const numParties = await partyQuery.count();
-    if(numParties == 1) {
-      return await partyQuery.first();
-    } else if(numParties == 0) {
-      return null;
-    } else {
-      throw "More than 1 party has that join code.  Yikes!";
-    }
+    return await partyQuery.first();
   }
 }
