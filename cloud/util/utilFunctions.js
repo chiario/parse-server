@@ -58,6 +58,17 @@ module.exports = {
   },
 
   /**
+   * Returns an entry in a party's playlist
+   *
+   * @param entryId the object ID of the entry to retrieve
+   * @return the playlist entry with the given entry ID
+   */
+  getEntryById: async function(entryId) {
+    const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
+    return await playlistQuery.get(entryId);
+  },
+
+  /**
    * Returns a song with the specified Spotify ID.
    *
    * @param spotifyId the Spotify ID of the song to obtain
@@ -262,9 +273,14 @@ module.exports = {
     return result;
   },
 
-  indicatePlaylistUpdated: async function(party) {
+  indicatePlaylistUpdated: async function(party, user) {
+    const playlist = await this.getPlaylistForParty(user, party);
+    
     party.set("playlistLastUpdatedAt", new Date());
+    party.set("cachedPlaylist", JSON.stringify(playlist));
     await party.save();
+
+    return playlist;
   },
 
   /**
