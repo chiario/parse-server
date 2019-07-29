@@ -42,6 +42,7 @@ Parse.Cloud.define("addSong", async (request) => {
   const entry = new parseObject.PlaylistEntry();
   entry.set("song", cachedSong);
   entry.set("party", party);
+  entry.set("numLikes", 0);
   await entry.save();
   await util.updateEntryScore(entry);
   await util.indicatePlaylistUpdated(party);
@@ -159,7 +160,8 @@ Parse.Cloud.define("likeSong", async (request) => {
     like.set("entry", entry);
     await like.save();
 
-    await util.updateEntryScore(entry);
+    entry.set("numLikes", entry.get("numLikes") + 1)
+    await entry.save();
     await util.indicatePlaylistUpdated(party);
     return await util.getPlaylistForParty(user, party);
   } else {
@@ -189,7 +191,8 @@ Parse.Cloud.define("unlikeSong", async (request) => {
   }
 
   await like.destroy();
-  await util.updateEntryScore(entry);
+  entry.set("numLikes", entry.get("numLikes") - 1)
+  await entry.save();
   await util.indicatePlaylistUpdated(party);
   return await util.getPlaylistForParty(user, party);
 });

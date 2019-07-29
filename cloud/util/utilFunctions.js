@@ -229,11 +229,7 @@ module.exports = {
   },
 
   updateEntryScore: async function(entry) {
-    const likeQuery = new Parse.Query(parseObject.Like);
-    likeQuery.equalTo("entry", entry);
-
-    // TODO: add a like count entry to avoid this operation
-    const numLikes = await likeQuery.count();
+    const numLikes = entry.get("numLikes");
 
     //TODO: integrate other factors here
 
