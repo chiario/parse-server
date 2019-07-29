@@ -162,6 +162,7 @@ Parse.Cloud.define("likeSong", async (request) => {
 
     entry.set("numLikes", entry.get("numLikes") + 1)
     await entry.save();
+    await util.updateEntryScore(entry);
     await util.indicatePlaylistUpdated(party);
     return await util.getPlaylistForParty(user, party);
   } else {
@@ -193,6 +194,7 @@ Parse.Cloud.define("unlikeSong", async (request) => {
   await like.destroy();
   entry.set("numLikes", entry.get("numLikes") - 1)
   await entry.save();
+  await util.updateEntryScore(entry);
   await util.indicatePlaylistUpdated(party);
   return await util.getPlaylistForParty(user, party);
 });
