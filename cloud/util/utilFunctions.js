@@ -114,7 +114,7 @@ module.exports = {
     const likeQuery = new Parse.Query(parseObject.Like);
     likeQuery.equalTo("entry", entry);
     likeQuery.equalTo("user", user);
-    return await likeQuery.first();
+    return await likeQuery.first() == null;
   },
 
   /**
