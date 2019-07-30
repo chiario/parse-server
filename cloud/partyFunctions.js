@@ -160,6 +160,8 @@ Parse.Cloud.define("deleteParty", async (request) => {
     await member.save(null, {useMasterKey:true});
   }
 
+  util.cleanupPlaylistEntries(party);
+
   // remove the party
   user.set("currParty", null);
   await user.save(null, {useMasterKey:true});
