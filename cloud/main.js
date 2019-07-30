@@ -87,3 +87,44 @@ async function buildCache(cachedQueries, query, token) {
     util.formatSearchResult(result, query);
   }
 }
+
+async function consolidateCache(query) {
+  const cacheQuery = new Parse.Query(parseObject.SearchCache);
+  cacheQuery.equalTo("query", query);
+  cacheQuery.include("song");
+
+  const results = await cacheQuery.find();
+
+
+  var formattedResult = [];
+  for(const cachedResult of results) {
+    formattedResult.push(cachedResult.get("song"));
+    cachedResult.destroy();
+  }
+
+  const consolidatedCache = new parseObject.SearchCache();
+  consolidatedCache.set("query", query);
+  consolidatedCache.set("songs", formattedResult);
+  return await consolidatedCache.save();
+}
+
+Parse.Cloud.job("consolidateSearchCache", async (request) =>  {
+  request.message("Job started");
+
+  const cache = await getAllSearchCaches();
+  
+  request.message("Got the cached results!");
+
+  const queries = buildQuerySet(cache);
+  
+  request.message("Got unique queries!");
+
+  for (const query of queries) {
+    request.message(`Consolidating cache for ${query}`);
+    await consolidateCache(query);
+  }
+
+  request.message(`Finished consolidating cache!`);
+
+  return;
+});
