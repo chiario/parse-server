@@ -236,3 +236,24 @@ Parse.Cloud.define("getPartyUserCount", async (request) => {
   countQuery.equalTo("currParty", party);
   return await countQuery.count();
 })
+
+/**
+ * This function sets the user's screen name
+ */
+
+Parse.Cloud.define("setScreenName", async (request) => {
+  const user = request.user;
+  const screenName = request.params.screenName;
+  if(screenName == null) {
+    throw "Screen name is null!";
+  }
+  user.set("screenName", screenName);
+})
+
+/**
+ * This function returns the current user's screen name
+ */
+ Parse.Cloud.define("getCurrentScreenName", async (request) => {
+   const user = request.user;
+   return await user.get("screenName");
+ })
