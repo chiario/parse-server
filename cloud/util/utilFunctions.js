@@ -275,7 +275,7 @@ module.exports = {
 
   indicatePlaylistUpdated: async function(party, user) {
     const playlist = await this.getPlaylistForParty(user, party);
-    
+
     party.set("playlistLastUpdatedAt", new Date());
     party.set("cachedPlaylist", JSON.stringify(playlist));
     await party.save();
@@ -315,5 +315,18 @@ module.exports = {
     const likeQuery = new Parse.Query(parseObject.Like);
     likeQuery.equalTo("user", user);
     return await likeQuery.find();
+  }
+
+  cleanupPlaylistEntries: async function(party) {
+    const deleteQuery = new Parse.Query(parseObject.PlaylistEntry);
+    deleteQuery.equalTo("party", party);
+    deleteQuery.find().then(function(entries) {
+      const deleteQuery = new Parse.Query(parseObject.Like);
+      deleteQuery.containedIn("entry", entries);
+      deleteQuery.find().then(function(likes) {
+        Parse.Object.destroyAll(likes);
+      });
+      Parse.Object.destroyAll(entries);
+    });
   }
 }
