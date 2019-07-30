@@ -106,12 +106,12 @@ Parse.Cloud.define("getNextSong", async (request) => {
 });
 
 /**
- * This function sets the party's currently playing song and returns it.
- * If the given song doesn't exist in the server, it first saves the song.
+ * This function sets the party's currently playing song.
  *
- * @param song the new Song that is currently playing
- * @throws error if the user is not the admin of their current party
- * @return the song that was set as currently playing
+ * @param spotifyId the Spotify ID of the song that is currently playing
+ * @throws error if the user is not the admin of their current party or if the
+ *         song isn't in stored in the server
+ * @return the current party
  */
 Parse.Cloud.define("setCurrentlyPlayingSong", async (request) => {
   const user = request.user;
@@ -120,22 +120,25 @@ Parse.Cloud.define("setCurrentlyPlayingSong", async (request) => {
     throw "User is not the admin of their party!";
   }
 
-  const song = request.params.song;
-  const cachedSong = await util.saveSong(song);
-
-  party.set("currPlaying", cachedSong);
+  const song = await util.getSongById(request.params.spotifyId);
+  if (song == null) {
+    throw "That song does not exist";
+  }
+  party.set("currPlaying", song);
   await party.save();
-  return cachedSong;
+
+  await util.indicatePlaylistUpdated(party, user);
+  return party;
 });
 
 /**
  * This function sets the party's currently playing song, deletes it from the
  * playlist, and returns it.
  *
- * @param entry the PlaylistEntry of the song that is currently playing
+ * @param entryId the object ID song that is currently playing
  * @throws error if the user is not the admin of their current party or if the
  *         song isn't in the party's playlist
- * @return the song that was removed
+ * @return the current party
  */
 Parse.Cloud.define("setCurrentlyPlayingEntry", async (request) => {
   const user = request.user;
@@ -144,15 +147,18 @@ Parse.Cloud.define("setCurrentlyPlayingEntry", async (request) => {
     throw "User is not the admin of their party!";
   }
 
-  const entry = request.params.entry;
-  const song = await entry.get("song").fetch();
+  const entry = await util.getEntryById(request.params.entryId);
+  if (entry == null) {
+    throw "That entry does not exist";
+  }
+  const song = entry.get("song");
   await entry.destroy();
-  await util.indicatePlaylistUpdated(party);
 
   party.set("currPlaying", song);
-  await party.save();
+  await party.save()
 
-  return song;
+  await util.indicatePlaylistUpdated(party, user);
+  return party;
 });
 
 /**
