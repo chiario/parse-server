@@ -51,7 +51,7 @@ Parse.Cloud.define("addSong", async (request) => {
 /**
  * This function removes a song from the current user's party
  *
- * @param spotifyId the song's Spotify ID from Spotify API
+ * @param entryId the object ID of the entry to remove
  * @throws error if the user is not the admin of their current party or if the
  *         song isn't in the party's playlist
  * @return the playlist entry that was removed
@@ -63,7 +63,7 @@ Parse.Cloud.define("removeSong", async (request) => {
     throw "User is not the admin of their party!";
   }
 
-  const entry = await util.getEntryBySpotifyId(request.params.spotifyId, party);
+  const entry = await util.getEntryById(request.params.entryId);
   if(entry == null) {
     throw 'Song is not in the playlist!';
   }
