@@ -315,7 +315,7 @@ module.exports = {
     const likeQuery = new Parse.Query(parseObject.Like);
     likeQuery.equalTo("user", user);
     return await likeQuery.find();
-  }
+  },
 
   cleanupPlaylistEntries: async function(party) {
     const deleteQuery = new Parse.Query(parseObject.PlaylistEntry);
