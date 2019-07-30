@@ -309,5 +309,11 @@ module.exports = {
     partyQuery.equalTo("joinCode", joinCode);
     partyQuery.include("currPlaying");
     return await partyQuery.first();
+  },
+
+  getLikesForUser: async function(user) {
+    const likeQuery = new Parse.Query(parseObject.Like);
+    likeQuery.equalTo("user", user);
+    return await likeQuery.find();
   }
 }

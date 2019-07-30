@@ -209,3 +209,16 @@ Parse.Cloud.define("getPlaylist", async (request) => {
   const party = await util.getPartyFromUser(user);
   return await util.getPlaylistForParty(user, party);
 });
+
+/**
+ * This function gets a current user's likes
+ *
+ * There are no parameters for this function
+ * @throws error if the user is not in a party
+ * @return a list of likes
+ */
+Parse.Cloud.define("getLikes", async (request) => {
+  const user = request.user;
+  return await util.getLikesForUser(user);
+});
+
