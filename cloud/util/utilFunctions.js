@@ -191,16 +191,14 @@ module.exports = {
   getCachedSearch: async function(query, limit) {
     const cacheQuery = new Parse.Query(parseObject.SearchCache);
     cacheQuery.equalTo("query", query);
-    cacheQuery.include("song");
-    cacheQuery.limit(limit);
+    cacheQuery.include("songs");
 
-    const results = await cacheQuery.find();
-
-    var formattedResult = [];
-    for(const cachedResult of results) {
-      formattedResult.push(cachedResult.get("song"));
+    const results = await cacheQuery.first();
+    if(results) {
+      return results.get("songs");
+    } else {
+      return null;
     }
-    return formattedResult;
   },
 
   /**
@@ -224,18 +222,17 @@ module.exports = {
       // Add it to the return array
       const cachedSong = await this.saveSong(song);
       formattedResult.push(cachedSong);
-
-      const cacheQuery = new Parse.Query(parseObject.SearchCache);
-      cacheQuery.equalTo("query", query);
-      cacheQuery.equalTo("song", cachedSong);
-      if(!await cacheQuery.first()) {
-        const cache = new parseObject.SearchCache();
-        cache.set("query", query);
-        cache.set("song", cachedSong);
-        await cache.save();
-      }
-
     }
+
+    const cacheQuery = new Parse.Query(parseObject.SearchCache);
+    cacheQuery.equalTo("query", query);
+    if(!await cacheQuery.first()) {
+      const cache = new parseObject.SearchCache();
+      cache.set("query", query);
+      cache.set("songs", formattedResult);
+      await cache.save();
+    }
+
     return formattedResult;
   },
 
