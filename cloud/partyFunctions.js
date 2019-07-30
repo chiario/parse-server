@@ -244,9 +244,6 @@ Parse.Cloud.define("getPartyUserCount", async (request) => {
 Parse.Cloud.define("setScreenName", async (request) => {
   const user = request.user;
   const screenName = request.params.screenName;
-  if(screenName == null) {
-    throw "Screen name is null!";
-  }
   user.set("screenName", screenName);
   await user.save(null, {useMasterKey:true});
   return screenName;
