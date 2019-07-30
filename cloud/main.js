@@ -20,7 +20,7 @@ Parse.Cloud.define("search", async (request) => {
 
   if(useCache) {
     const cachedResult = await util.getCachedSearch(query, limit);
-    if(cachedResult.length > 0) return cachedResult;
+    if(cachedResult) return cachedResult;
   }
   const result = await util.searchSpotify(token, query, limit);
   return await util.formatSearchResult(result, query);
@@ -95,6 +95,9 @@ async function consolidateCache(query) {
 
   const results = await cacheQuery.find();
 
+  if(results.length == 1 && results[0].get("songs")) {
+    return;
+  }
 
   var formattedResult = [];
   for(const cachedResult of results) {
