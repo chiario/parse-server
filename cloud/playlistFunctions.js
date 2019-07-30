@@ -31,6 +31,7 @@ Parse.Cloud.define("addSong", async (request) => {
   song.set("artUrl", request.params.artUrl);
   song.set("spotifyId", request.params.spotifyId);
 
+
   // Save the song to the database
   const cachedSong = await util.saveSong(song);
 
@@ -43,6 +44,7 @@ Parse.Cloud.define("addSong", async (request) => {
   entry.set("song", cachedSong);
   entry.set("party", party);
   entry.set("numLikes", 0);
+  entry.set("addedBy", user);
   await entry.save();
   await util.updateEntryScore(entry);
   return await util.indicatePlaylistUpdated(party);
@@ -123,7 +125,6 @@ Parse.Cloud.define("setCurrentlyPlaying", async (request) => {
   let song;
   if(entry == null) {
     song = await util.getSongById(request.params.spotifyId);
-
   } else {
     song = await entry.get("song").fetch();
     await entry.destroy();
