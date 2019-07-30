@@ -44,7 +44,7 @@ Parse.Cloud.define("addSong", async (request) => {
   entry.set("song", cachedSong);
   entry.set("party", party);
   entry.set("numLikes", 0);
-  entry.set("addedBy", user);
+  entry.set("addedBy", user.get("screenName"));
   await entry.save();
   await util.updateEntryScore(entry);
   return await util.indicatePlaylistUpdated(party);
@@ -222,4 +222,3 @@ Parse.Cloud.define("getLikes", async (request) => {
   const user = request.user;
   return await util.getLikesForUser(user);
 });
-
