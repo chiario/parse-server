@@ -248,7 +248,7 @@ Parse.Cloud.define("setScreenName", async (request) => {
     throw "Screen name is null!";
   }
   user.set("screenName", screenName);
-  await user.save();
+  await user.save(null, {useMasterKey:true});
   return screenName;
 })
 
