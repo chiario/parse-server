@@ -266,3 +266,7 @@ Parse.Cloud.define("getCurrentScreenName", async (request) => {
     const user = request.user;
     return await user.get("screenName");
 })
+
+Parse.Cloud.afterDelete(parseObject.Party, async (request) => {
+  util.cleanupPlaylistEntries(request.object);
+})

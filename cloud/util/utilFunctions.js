@@ -325,5 +325,13 @@ module.exports = {
             });
             Parse.Object.destroyAll(entries);
         });
+    },
+
+    cleanupLikes: async function(entry) {
+      const deleteQuery = new Parse.Query(parseObject.Like);
+      deleteQuery.equalTo("entry", entry);
+      deleteQuery.find().then(function (likes) {
+        Parse.Object.destroyAll(likes);
+      })
     }
 }

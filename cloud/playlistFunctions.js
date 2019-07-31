@@ -245,3 +245,7 @@ Parse.Cloud.define("getLikes", async (request) => {
     const user = request.user;
     return await util.getLikesForUser(user);
 });
+
+Parse.Cloud.afterDelete(parseObject.PlaylistEntry, async (request) => {
+  util.cleanupLikes(request.object);
+})
