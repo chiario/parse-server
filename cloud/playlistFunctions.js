@@ -128,7 +128,7 @@ Parse.Cloud.define("setCurrentlyPlayingSong", async (request) => {
   await party.save();
 
   await util.indicatePlaylistUpdated(party, user);
-  return party;
+  return song;
 });
 
 /**
@@ -158,7 +158,7 @@ Parse.Cloud.define("setCurrentlyPlayingEntry", async (request) => {
   await party.save()
 
   await util.indicatePlaylistUpdated(party, user);
-  return party;
+  return song;
 });
 
 /**
