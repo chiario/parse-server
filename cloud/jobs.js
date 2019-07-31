@@ -53,6 +53,27 @@ Parse.Cloud.job("consolidateSearchCache", async (request) => {
     return;
 });
 
+Parse.Cloud.job("removeSongURLPrefixes", async (request) => {
+    request.message("Job started");
+
+    const songs = await getAll(parseObject.Song);
+
+    request.message("Got all songs!");
+
+    for (const song of songs) {
+        request.message(`Removing URL prefix for ${song.get("title")}`);
+        let url = song.get("artUrl");
+        if (!url) continue;
+        url = url.replace("https://i.scdn.co/image/", "");
+        song.set("artUrl", url);
+        await song.save();
+    }
+
+    request.message(`Finished removing prefixes!`);
+
+    return;
+});
+
 async function getAll(type) {
     var result = [];
     var skip = false;
