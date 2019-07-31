@@ -37,27 +37,6 @@ Parse.Cloud.define("createParty", async (request) => {
 });
 
 /**
- * This function sets the user's current party name
- *
- * @throws an error if the user isn't the admin of the current party
- * @param name the new name of the party as set by the user
-**/
-Parse.Cloud.define("setPartyName", async (request) => {
-    const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    const name = request.params.name;
-
-    if (!util.isUserAdmin(user, party)) {
-        throw "Cannot change party name if user is not admin!";
-    }
-
-    party.set("name", name);
-    await party.save();
-
-    return party;
-});
-
-/**
  * This function returns the party the current user is part of
  *
  * There are no parameters for this function
@@ -191,23 +170,6 @@ Parse.Cloud.define("clearPartyLocation", async (request) => {
 
     party.set("location", null);
     return await party.save();
-})
-
-/**
- * This function sets the current party's location enabling to true or false
- *
- * @param locationEnabled the boolean value to set location enabling to
-**/
-Parse.Cloud.define("setLocationEnabled", async (request) => {
-    const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    const locationEnabled = request.params.locationEnabled;
-    if (!util.isUserAdmin(user, party)) {
-        throw "User is not the admin of their party!";
-    }
-    party.set("locationEnabled", locationEnabled);
-    await party.save();
-    return party;
 })
 
 Parse.Cloud.define("savePartySettings", async (request) => {
