@@ -13,15 +13,15 @@ require('./playlistFunctions.js')
  * @return a list of songs returned by the search
  */
 Parse.Cloud.define("search", async (request) => {
-  const token = await util.getSpotifyToken();
   const query = request.params.query;
-  const limit = request.params.limit == null ? 20 : request.params.limit;
   const useCache = request.params.useCache;
 
   if(useCache) {
-    const cachedResult = await util.getCachedSearch(query, limit);
+    const cachedResult = await util.getCachedSearch(query);
     if(cachedResult) return cachedResult;
   }
+  const token = await util.getSpotifyToken();
+  const limit = request.params.limit == null ? 20 : request.params.limit;
   const result = await util.searchSpotify(token, query, limit);
   return await util.formatSearchResult(result, query);
 });
