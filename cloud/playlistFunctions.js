@@ -152,11 +152,10 @@ Parse.Cloud.define("setCurrentlyPlayingEntry", async (request) => {
         throw "That entry does not exist";
     }
     const song = entry.get("song");
-    await entry.destroy();
-
     party.set("currPlaying", song);
-    await party.save()
+    await party.save();
 
+    await entry.destroy();
     await util.indicatePlaylistUpdated(party, user);
     return song;
 });
