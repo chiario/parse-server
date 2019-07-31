@@ -1,7 +1,10 @@
 const parseObject = require('./util/parseObject.js')
 const util = require('./util/utilFunctions.js')
+const LRUCache = require('./util/LRUCache.js')
 require('./partyFunctions.js')
 require('./playlistFunctions.js')
+
+const cache = new LRUCache(1000);
 
 /**
  * This function searches spotify for a track
@@ -16,14 +19,24 @@ Parse.Cloud.define("search", async (request) => {
   const query = request.params.query;
   const useCache = request.params.useCache;
 
+  let cached = cache.get(query);
+  if(cached) {
+    return cached;
+  }
+
   if(useCache) {
     const cachedResult = await util.getCachedSearch(query);
-    if(cachedResult) return cachedResult;
+    if(cachedResult) {
+      cache.set(query, cachedResult);
+      return cachedResult;
+    }
   }
   const token = await util.getSpotifyToken();
   const limit = request.params.limit == null ? 20 : request.params.limit;
   const result = await util.searchSpotify(token, query, limit);
-  return await util.formatSearchResult(result, query);
+  const formattedResult = await util.formatSearchResult(result, query);
+  cache.set(query, formattedResult);
+  return formattedResult;
 });
 
 Parse.Cloud.job("buildSearchCache", async (request) =>  {
@@ -130,4 +143,18 @@ Parse.Cloud.job("consolidateSearchCache", async (request) =>  {
   request.message(`Finished consolidating cache!`);
 
   return;
+});
+
+
+
+Parse.Cloud.define("testLRU", async (request) => {
+  const cache = new LRUCache(9);
+  
+  cache.set("t", 1);
+  cache.set("te", 2);
+  cache.set("tes", 3);
+  cache.set("test", 4);
+  cache.set("t", 5);
+
+  return cache.get("t");
 });
