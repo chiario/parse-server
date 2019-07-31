@@ -15,7 +15,8 @@
     "parse": "~1.8.0",
     "parse-server": "*",
     "request": "^2.88.0",
-    "request-promise-native": "^1.0.7"
+    "request-promise-native": "^1.0.7",
+    "yallist": "^3.0.3"
   },
   "scripts": {
     "start": "node index.js"
