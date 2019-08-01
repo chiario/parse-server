@@ -28,6 +28,7 @@ Parse.Cloud.define("createParty", async (request) => {
     party.set("name", name);
     party.set("locationEnabled", true);
     party.set("joinCode", await util.generateJoinCode());
+    party.set("userCount", 1);
     await party.save();
 
     user.set("currParty", party);
@@ -83,6 +84,9 @@ Parse.Cloud.define("joinParty", async (request) => {
     if (party == null) {
         throw "A party with that join code does not exist!";
     }
+    const userCount = await party.get("userCount");
+    party.set("userCount", userCount + 1);
+    await party.save();
 
     user.set("currParty", party)
     await user.save(null, { useMasterKey: true });
@@ -204,9 +208,7 @@ Parse.Cloud.define("savePartySettings", async (request) => {
 Parse.Cloud.define("getPartyUserCount", async (request) => {
     const user = request.user;
     const party = await util.getPartyFromUser(user);
-    const countQuery = new Parse.Query(Parse.User);
-    countQuery.equalTo("currParty", party);
-    return await countQuery.count();
+    return party.get("userCount");
 })
 
 /**
