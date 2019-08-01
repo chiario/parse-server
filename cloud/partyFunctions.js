@@ -226,6 +226,7 @@ Parse.Cloud.define("setScreenName", async (request) => {
     const user = request.user;
     const screenName = request.params.screenName;
     user.set("screenName", screenName);
+    user.set("songsAdded", 0);
     await user.save(null, { useMasterKey: true });
     return screenName;
 })
