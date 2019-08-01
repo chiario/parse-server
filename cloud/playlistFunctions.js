@@ -6,8 +6,8 @@
 *                                                                              *
  ******************************************************************************/
 
-const util = require('./util/utilFunctions.js')
-const parseObject = require('./util/parseObject.js')
+const Util = require('./util/utilFunctions.js')
+const ParseObject = require('./util/parseObject.js')
 
 /**
  * This function adds a song to the current user's party
@@ -23,15 +23,15 @@ const parseObject = require('./util/parseObject.js')
  */
 Parse.Cloud.define("addSong", async (request) => {
     const user = request.user;
-    const party = await util.getPartyFromUser(user);
+    const party = await Util.getPartyFromUser(user);
 
     // Check if the user has reached the party's song limit
     const songLimit = party.get("songLimit");
     const songsAdded = user.get("songsAdded");
     if (songsAdded >= songLimit) {
-      throw "User has reached the song limit!";
+        throw "User has reached the song limit!";
     }
-    const song = new parseObject.Song();
+    const song = new ParseObject.Song();
     song.set("artist", request.params.artist);
     song.set("title", request.params.title);
     song.set("album", request.params.album);
@@ -40,25 +40,25 @@ Parse.Cloud.define("addSong", async (request) => {
 
 
     // Save the song to the database
-    const cachedSong = await util.saveSong(song);
+    const cachedSong = await Util.saveSong(song);
 
-    if (await util.getPlaylistEntry(cachedSong, party)) {
+    if (await Util.getPlaylistEntry(cachedSong, party)) {
         throw 'Song is already in the playlist!';
     }
 
     // Add song to party
-    const entry = new parseObject.PlaylistEntry();
+    const entry = new ParseObject.PlaylistEntry();
     entry.set("song", cachedSong);
     entry.set("party", party);
     entry.set("numLikes", 0);
     entry.set("addedBy", user.get("screenName"));
     await entry.save();
-    await util.updateEntryScore(entry);
+    await Util.updateEntryScore(entry);
     // Update the count of songs user has added
     user.set("songsAdded", songsAdded + 1);
     await user.save(null, { useMasterKey: true });
 
-    return await util.indicatePlaylistUpdated(party);
+    return await Util.indicatePlaylistUpdated(party);
 });
 
 /**
@@ -71,18 +71,18 @@ Parse.Cloud.define("addSong", async (request) => {
  */
 Parse.Cloud.define("removeSong", async (request) => {
     const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    if (!util.isUserAdmin(user, party)) {
+    const party = await Util.getPartyFromUser(user);
+    if (!Util.isUserAdmin(user, party)) {
         throw "User is not the admin of their party!";
     }
 
-    const entry = await util.getEntryById(request.params.entryId);
+    const entry = await Util.getEntryById(request.params.entryId);
     if (entry == null) {
         throw 'Song is not in the playlist!';
     }
 
     await entry.destroy();
-    return await util.indicatePlaylistUpdated(party);
+    return await Util.indicatePlaylistUpdated(party);
 });
 
 /**
@@ -95,12 +95,12 @@ Parse.Cloud.define("removeSong", async (request) => {
  */
 Parse.Cloud.define("getNextSong", async (request) => {
     const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    if (!util.isUserAdmin(user, party)) {
+    const party = await Util.getPartyFromUser(user);
+    if (!Util.isUserAdmin(user, party)) {
         throw "User is not the admin of their party!";
     }
 
-    const playlist = await util.getPlaylistForParty(user, party);
+    const playlist = await Util.getPlaylistForParty(user, party);
     if (playlist.length == 0) {
         throw "The playlist is empty";
     }
@@ -108,7 +108,7 @@ Parse.Cloud.define("getNextSong", async (request) => {
     const entry = playlist[0];
     const song = entry.get("song");
     await entry.destroy();
-    await util.indicatePlaylistUpdated(party);
+    await Util.indicatePlaylistUpdated(party);
 
     party.set("currPlaying", song);
     await party.save();
@@ -126,19 +126,19 @@ Parse.Cloud.define("getNextSong", async (request) => {
  */
 Parse.Cloud.define("setCurrentlyPlayingSong", async (request) => {
     const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    if (!util.isUserAdmin(user, party)) {
+    const party = await Util.getPartyFromUser(user);
+    if (!Util.isUserAdmin(user, party)) {
         throw "User is not the admin of their party!";
     }
 
-    const song = await util.getSongById(request.params.spotifyId);
+    const song = await Util.getSongById(request.params.spotifyId);
     if (song == null) {
         throw "That song does not exist";
     }
     party.set("currPlaying", song);
     await party.save();
 
-    await util.indicatePlaylistUpdated(party, user);
+    await Util.indicatePlaylistUpdated(party, user);
     return song;
 });
 
@@ -153,12 +153,12 @@ Parse.Cloud.define("setCurrentlyPlayingSong", async (request) => {
  */
 Parse.Cloud.define("setCurrentlyPlayingEntry", async (request) => {
     const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    if (!util.isUserAdmin(user, party)) {
+    const party = await Util.getPartyFromUser(user);
+    if (!Util.isUserAdmin(user, party)) {
         throw "User is not the admin of their party!";
     }
 
-    const entry = await util.getEntryById(request.params.entryId);
+    const entry = await Util.getEntryById(request.params.entryId);
     if (entry == null) {
         throw "That entry does not exist";
     }
@@ -167,7 +167,7 @@ Parse.Cloud.define("setCurrentlyPlayingEntry", async (request) => {
     await party.save();
 
     await entry.destroy();
-    await util.indicatePlaylistUpdated(party, user);
+    await Util.indicatePlaylistUpdated(party, user);
     return song;
 });
 
@@ -181,22 +181,22 @@ Parse.Cloud.define("setCurrentlyPlayingEntry", async (request) => {
  */
 Parse.Cloud.define("likeSong", async (request) => {
     const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    const entry = await util.getEntryById(request.params.entryId);
+    const party = await Util.getPartyFromUser(user);
+    const entry = await Util.getEntryById(request.params.entryId);
     if (entry == null) {
         throw "That entry does not exist";
     }
 
-    if (!await util.isEntryLikedByUser(entry, user)) {
-        const like = new parseObject.Like();
+    if (!await Util.isEntryLikedByUser(entry, user)) {
+        const like = new ParseObject.Like();
         like.set("user", user);
         like.set("entry", entry);
         await like.save();
 
         entry.set("numLikes", entry.get("numLikes") + 1)
         await entry.save();
-        await util.updateEntryScore(entry);
-        await util.indicatePlaylistUpdated(party, user);
+        await Util.updateEntryScore(entry);
+        await Util.indicatePlaylistUpdated(party, user);
         return like;
     } else {
         throw 'User has already liked the song!';
@@ -213,13 +213,13 @@ Parse.Cloud.define("likeSong", async (request) => {
  */
 Parse.Cloud.define("unlikeSong", async (request) => {
     const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    const entry = await util.getEntryById(request.params.entryId);
+    const party = await Util.getPartyFromUser(user);
+    const entry = await Util.getEntryById(request.params.entryId);
     if (entry == null) {
         throw "That entry does not exist";
     }
 
-    const like = await util.getLike(entry, user);
+    const like = await Util.getLike(entry, user);
     if (like == null) {
         throw 'User has not liked the song!';
     }
@@ -227,8 +227,8 @@ Parse.Cloud.define("unlikeSong", async (request) => {
     await like.destroy();
     entry.set("numLikes", entry.get("numLikes") - 1)
     await entry.save();
-    await util.updateEntryScore(entry);
-    await util.indicatePlaylistUpdated(party, user);
+    await Util.updateEntryScore(entry);
+    await Util.indicatePlaylistUpdated(party, user);
     return like;
 });
 
@@ -241,8 +241,8 @@ Parse.Cloud.define("unlikeSong", async (request) => {
  */
 Parse.Cloud.define("getPlaylist", async (request) => {
     const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    return await util.getPlaylistForParty(user, party);
+    const party = await Util.getPartyFromUser(user);
+    return await Util.getPlaylistForParty(user, party);
 });
 
 /**
@@ -254,9 +254,9 @@ Parse.Cloud.define("getPlaylist", async (request) => {
  */
 Parse.Cloud.define("getLikes", async (request) => {
     const user = request.user;
-    return await util.getLikesForUser(user);
+    return await Util.getLikesForUser(user);
 });
 
-Parse.Cloud.afterDelete(parseObject.PlaylistEntry, async (request) => {
-  util.cleanupLikes(request.object);
+Parse.Cloud.afterDelete(ParseObject.PlaylistEntry, async (request) => {
+    Util.cleanupLikes(request.object);
 })

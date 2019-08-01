@@ -6,15 +6,15 @@
 *                                                                              *
  ******************************************************************************/
 
-const util = require('./util/utilFunctions.js')
-const parseObject = require('./util/parseObject.js')
+const Util = require('./util/utilFunctions.js')
+const ParseObject = require('./util/parseObject.js')
 const Cache = require('./util/cache.js')
 
 Parse.Cloud.job("buildSearchCache", async (request) => {
     request.message("Job started");
 
-    const cache = await getAll(parseObject.SearchCache);
-    const token = await util.getSpotifyToken();
+    const cache = await getAll(ParseObject.SearchCache);
+    const token = await Util.getSpotifyToken();
 
     request.message("Got the cached results!");
 
@@ -36,7 +36,7 @@ Parse.Cloud.job("buildSearchCache", async (request) => {
 Parse.Cloud.job("consolidateSearchCache", async (request) => {
     request.message("Job started");
 
-    const cache = await getAll(parseObject.SearchCache);
+    const cache = await getAll(ParseObject.SearchCache);
 
     request.message("Got the cached results!");
 
@@ -75,7 +75,7 @@ Parse.Cloud.job("loadSearchCache", async (request) => {
 Parse.Cloud.job("removeSongURLPrefixes", async (request) => {
     request.message("Job started");
 
-    const songs = await getAll(parseObject.Song);
+    const songs = await getAll(ParseObject.Song);
 
     request.message("Got all songs!");
 
@@ -100,7 +100,7 @@ async function getAllSearchCaches() {
 
     while (true) {
         // Get the next chunk
-        const cacheQuery = new Parse.Query(parseObject.SearchCache);
+        const cacheQuery = new Parse.Query(ParseObject.SearchCache);
         cacheQuery.ascending("objectId");
         if (skip) cacheQuery.greaterThan("objectId", skip);
         cacheQuery.limit(chunk_size);
@@ -152,13 +152,13 @@ async function buildCache(cachedQueries, query, token) {
         if (cachedQueries.has(query)) continue;
 
         cachedQueries.add(query);
-        const result = await util.searchSpotify(token, query, 50);
-        util.formatSearchResult(result, query);
+        const result = await Util.searchSpotify(token, query, 50);
+        Util.formatSearchResult(result, query);
     }
 }
 
 async function consolidateCache(query) {
-    const cacheQuery = new Parse.Query(parseObject.SearchCache);
+    const cacheQuery = new Parse.Query(ParseObject.SearchCache);
     cacheQuery.equalTo("query", query);
     cacheQuery.include("song");
 
@@ -174,7 +174,7 @@ async function consolidateCache(query) {
         cachedResult.destroy();
     }
 
-    const consolidatedCache = new parseObject.SearchCache();
+    const consolidatedCache = new ParseObject.SearchCache();
     consolidatedCache.set("query", query);
     consolidatedCache.set("songs", formattedResult);
     return await consolidatedCache.save();

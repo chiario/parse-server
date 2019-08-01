@@ -3,8 +3,9 @@
 *                               HELPER FUNCTIONS                               *
 *                                                                              *
  ******************************************************************************/
-const parseObject = require('./parseObject.js')
-const spotify = require('./spotifyAPI.js')
+const ParseObject = require('./parseObject.js')
+const Spotify = require('./spotifyAPI.js')
+const Cache = require('./cache.js')
 
 module.exports = {
     /**
@@ -21,10 +22,17 @@ module.exports = {
             return null;
         }
 
+        // Try getting the party from the cache
+        const cachedParty = Cache.partyCache.get(partyPointer.id);
+        if (cachedParty) {
+            return cachedParty;
+        }
+
         // get the user's current party
-        const partyQuery = new Parse.Query(parseObject.Party);
+        const partyQuery = new Parse.Query(ParseObject.Party);
         partyQuery.include("currPlaying");
         const party = await partyQuery.get(partyPointer.id);
+        Cache.partyCache.set(partyPointer.id, party);
         return party;
     },
 
@@ -36,7 +44,7 @@ module.exports = {
      * @return the playlist entry for the song in the specified party
      */
     getPlaylistEntry: async function (song, party) {
-        const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
+        const playlistQuery = new Parse.Query(ParseObject.PlaylistEntry);
         playlistQuery.equalTo("party", party);
         playlistQuery.equalTo("song", song);
         return await playlistQuery.first();
@@ -64,7 +72,7 @@ module.exports = {
      * @return the playlist entry with the given entry ID
      */
     getEntryById: async function (entryId) {
-        const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
+        const playlistQuery = new Parse.Query(ParseObject.PlaylistEntry);
         return await playlistQuery.get(entryId);
     },
 
@@ -77,7 +85,7 @@ module.exports = {
      *         ID
      */
     getSongById: async function (spotifyId) {
-        const songQuery = new Parse.Query(parseObject.Song);
+        const songQuery = new Parse.Query(ParseObject.Song);
         songQuery.equalTo("spotifyId", spotifyId);
         return await songQuery.first();
     },
@@ -94,7 +102,7 @@ module.exports = {
      */
     saveSong: async function (song) {
         // Check if a song with the same spotifyId is already in the database
-        const songQuery = new Parse.Query(parseObject.Song);
+        const songQuery = new Parse.Query(ParseObject.Song);
         songQuery.equalTo("spotifyId", song.get("spotifyId"));
         var cachedSong = await songQuery.first();
         if (!cachedSong) {
@@ -122,7 +130,7 @@ module.exports = {
      * @param user the user whose like to check
      */
     isEntryLikedByUser: async function (entry, user) {
-        const likeQuery = new Parse.Query(parseObject.Like);
+        const likeQuery = new Parse.Query(ParseObject.Like);
         likeQuery.equalTo("entry", entry);
         likeQuery.equalTo("user", user);
         return await likeQuery.first() != null;
@@ -136,7 +144,7 @@ module.exports = {
      * @throws an error if the like does not exist
      */
     getLike: async function (entry, user) {
-        const likeQuery = new Parse.Query(parseObject.Like);
+        const likeQuery = new Parse.Query(ParseObject.Like);
         likeQuery.equalTo("entry", entry);
         likeQuery.equalTo("user", user);
         return await likeQuery.first();
@@ -151,7 +159,7 @@ module.exports = {
      */
     getSpotifyToken: async function () {
         // Check to see if a token already exists
-        const tokenQuery = new Parse.Query(parseObject.SpotifyToken);
+        const tokenQuery = new Parse.Query(ParseObject.SpotifyToken);
         tokenQuery.descending("createdAt");
         var token = await tokenQuery.first();
         if (token) {
@@ -169,8 +177,8 @@ module.exports = {
         }
 
         // Otherwise, create a new token
-        const tokenRaw = await spotify.getAccessToken();
-        token = new parseObject.SpotifyToken();
+        const tokenRaw = await Spotify.getAccessToken();
+        token = new ParseObject.SpotifyToken();
         token.set("value", tokenRaw.access_token);
         token.set("type", tokenRaw.token_type);
         token.set("expiresIn", tokenRaw.expires_in);
@@ -179,7 +187,7 @@ module.exports = {
     },
 
     searchSpotify: async function (token, query, limit) {
-        return await spotify.search(token, query, limit)
+        return await Spotify.search(token, query, limit)
     },
 
     /**
@@ -189,7 +197,7 @@ module.exports = {
      * @return a list of song objects
      */
     getCachedSearch: async function (query) {
-        const cacheQuery = new Parse.Query(parseObject.SearchCache);
+        const cacheQuery = new Parse.Query(ParseObject.SearchCache);
         cacheQuery.equalTo("query", query);
         cacheQuery.include("songs");
 
@@ -212,7 +220,7 @@ module.exports = {
         var formattedResult = [];
         for (const track of result.tracks.items) {
             // Create a new song from the result json
-            const song = new parseObject.Song();
+            const song = new ParseObject.Song();
             song.set("spotifyId", track.id);
             song.set("artist", track.artists[0].name);
             song.set("title", track.name);
@@ -224,10 +232,10 @@ module.exports = {
             formattedResult.push(cachedSong);
         }
 
-        const cacheQuery = new Parse.Query(parseObject.SearchCache);
+        const cacheQuery = new Parse.Query(ParseObject.SearchCache);
         cacheQuery.equalTo("query", query);
         if (!await cacheQuery.first()) {
-            const cache = new parseObject.SearchCache();
+            const cache = new ParseObject.SearchCache();
             cache.set("query", query);
             cache.set("songs", formattedResult);
             await cache.save();
@@ -253,7 +261,7 @@ module.exports = {
      * @return the party's playlist as a list of playlist entries
      */
     getPlaylistForParty: async function (user, party) {
-        const playlistQuery = new Parse.Query(parseObject.PlaylistEntry);
+        const playlistQuery = new Parse.Query(ParseObject.PlaylistEntry);
         playlistQuery.equalTo("party", party);
         playlistQuery.descending("score");
         playlistQuery.include("song");
@@ -292,7 +300,7 @@ module.exports = {
         // Limit the amount of retries to 100
         for (var i = 0; i < 100; i++) {
             const joinCode = Math.random().toString(36).substr(2, 4);
-            const partyQuery = new Parse.Query(parseObject.Party);
+            const partyQuery = new Parse.Query(ParseObject.Party);
             partyQuery.equalTo("joinCode", joinCode);
             if (!await partyQuery.first()) {
                 return joinCode;
@@ -302,23 +310,23 @@ module.exports = {
     },
 
     getPartyByJoinCode: async function (joinCode) {
-        const partyQuery = new Parse.Query(parseObject.Party);
+        const partyQuery = new Parse.Query(ParseObject.Party);
         partyQuery.equalTo("joinCode", joinCode);
         partyQuery.include("currPlaying");
         return await partyQuery.first();
     },
 
     getLikesForUser: async function (user) {
-        const likeQuery = new Parse.Query(parseObject.Like);
+        const likeQuery = new Parse.Query(ParseObject.Like);
         likeQuery.equalTo("user", user);
         return await likeQuery.find();
     },
 
     cleanupPlaylistEntries: async function (party) {
-        const deleteQuery = new Parse.Query(parseObject.PlaylistEntry);
+        const deleteQuery = new Parse.Query(ParseObject.PlaylistEntry);
         deleteQuery.equalTo("party", party);
         deleteQuery.find().then(function (entries) {
-            const deleteQuery = new Parse.Query(parseObject.Like);
+            const deleteQuery = new Parse.Query(ParseObject.Like);
             deleteQuery.containedIn("entry", entries);
             deleteQuery.find().then(function (likes) {
                 Parse.Object.destroyAll(likes);
@@ -327,11 +335,11 @@ module.exports = {
         });
     },
 
-    cleanupLikes: async function(entry) {
-      const deleteQuery = new Parse.Query(parseObject.Like);
-      deleteQuery.equalTo("entry", entry);
-      deleteQuery.find().then(function (likes) {
-        Parse.Object.destroyAll(likes);
-      })
+    cleanupLikes: async function (entry) {
+        const deleteQuery = new Parse.Query(ParseObject.Like);
+        deleteQuery.equalTo("entry", entry);
+        deleteQuery.find().then(function (likes) {
+            Parse.Object.destroyAll(likes);
+        })
     }
 }

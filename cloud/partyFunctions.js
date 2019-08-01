@@ -6,8 +6,8 @@
 *                                                                              *
  ******************************************************************************/
 
-const util = require('./util/utilFunctions.js')
-const parseObject = require('./util/parseObject.js')
+const Util = require('./util/utilFunctions.js')
+const ParseObject = require('./util/parseObject.js')
 
 /**
  * This function creates a new party with the current user as the owner
@@ -23,11 +23,11 @@ Parse.Cloud.define("createParty", async (request) => {
         throw 'Current user already has a party!'
     }
 
-    const party = new parseObject.Party();
+    const party = new ParseObject.Party();
     party.set("admin", user);
     party.set("name", name);
     party.set("locationEnabled", true);
-    party.set("joinCode", await util.generateJoinCode());
+    party.set("joinCode", await Util.generateJoinCode());
     party.set("userCount", 1);
     await party.save();
 
@@ -45,7 +45,7 @@ Parse.Cloud.define("createParty", async (request) => {
  */
 Parse.Cloud.define("getCurrentParty", async (request) => {
     const user = request.user;
-    return await util.getPartyFromUser(user);
+    return await Util.getPartyFromUser(user);
 });
 
 /**
@@ -59,7 +59,7 @@ Parse.Cloud.define("getNearbyParties", async (request) => {
     const location = request.params.location;
     const maxDistance = request.params.maxDistance == null
         ? 0.5 : request.params.maxDistance;
-    const partyQuery = new Parse.Query(parseObject.Party);
+    const partyQuery = new Parse.Query(ParseObject.Party);
     partyQuery.withinMiles("location", location, maxDistance, true);
     return await partyQuery.find();
 });
@@ -80,14 +80,14 @@ Parse.Cloud.define("joinParty", async (request) => {
         throw 'Current user already has a party!';
     }
 
-    const party = await util.getPartyByJoinCode(joinCode);
+    const party = await Util.getPartyByJoinCode(joinCode);
     if (party == null) {
         throw "A party with that join code does not exist!";
     }
     const userCount = await party.get("userCount");
     const userLimit = await party.get("userLimit");
     if (userCount >= userLimit) {
-      throw "The party has reached its user limit!";
+        throw "The party has reached its user limit!";
     }
     party.set("userCount", userCount + 1);
     await party.save();
@@ -107,13 +107,13 @@ Parse.Cloud.define("joinParty", async (request) => {
 Parse.Cloud.define("leaveParty", async (request) => {
     const user = request.user;
 
-    const party = await util.getPartyFromUser(user);
+    const party = await Util.getPartyFromUser(user);
     if (party == null) {
         throw "User does not have a party";
     }
 
     // check if user is not the party's admin
-    if (util.isUserAdmin(user, party)) {
+    if (Util.isUserAdmin(user, party)) {
         throw "Cannot leave party if user is admin";
     }
     const userCount = party.get("userCount");
@@ -134,10 +134,10 @@ Parse.Cloud.define("leaveParty", async (request) => {
  */
 Parse.Cloud.define("deleteParty", async (request) => {
     const user = request.user;
-    const party = await util.getPartyFromUser(user);
+    const party = await Util.getPartyFromUser(user);
 
     // check if user is party's admin
-    if (!util.isUserAdmin(user, party)) {
+    if (!Util.isUserAdmin(user, party)) {
         throw "User is not the admin of their party!"
     }
 
@@ -150,7 +150,7 @@ Parse.Cloud.define("deleteParty", async (request) => {
         await member.save(null, { useMasterKey: true });
     }
 
-    util.cleanupPlaylistEntries(party);
+    Util.cleanupPlaylistEntries(party);
 
     // remove the party
     user.set("currParty", null);
@@ -163,8 +163,8 @@ Parse.Cloud.define("deleteParty", async (request) => {
 Parse.Cloud.define("updatePartyLocation", async (request) => {
     const user = request.user;
     const location = request.params.location;
-    const party = await util.getPartyFromUser(user);
-    if (!util.isUserAdmin(user, party)) {
+    const party = await Util.getPartyFromUser(user);
+    if (!Util.isUserAdmin(user, party)) {
         throw "User is not the admin of their party!";
     }
 
@@ -174,8 +174,8 @@ Parse.Cloud.define("updatePartyLocation", async (request) => {
 
 Parse.Cloud.define("clearPartyLocation", async (request) => {
     const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    if (!util.isUserAdmin(user, party)) {
+    const party = await Util.getPartyFromUser(user);
+    if (!Util.isUserAdmin(user, party)) {
         throw "User is not the admin of their party!";
     }
 
@@ -185,8 +185,8 @@ Parse.Cloud.define("clearPartyLocation", async (request) => {
 
 Parse.Cloud.define("savePartySettings", async (request) => {
     const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    if (!util.isUserAdmin(user, party)) {
+    const party = await Util.getPartyFromUser(user);
+    if (!Util.isUserAdmin(user, party)) {
         throw "User is not the admin of their party!";
     }
     const locationEnabled = request.params.locationEnabled;
@@ -209,11 +209,9 @@ Parse.Cloud.define("savePartySettings", async (request) => {
     return party;
 })
 
-
 /**
  * This function sets the user's screen name
  */
-
 Parse.Cloud.define("setScreenName", async (request) => {
     const user = request.user;
     const screenName = request.params.screenName;
@@ -231,6 +229,6 @@ Parse.Cloud.define("getCurrentScreenName", async (request) => {
     return await user.get("screenName");
 })
 
-Parse.Cloud.afterDelete(parseObject.Party, async (request) => {
-  util.cleanupPlaylistEntries(request.object);
+Parse.Cloud.afterDelete(ParseObject.Party, async (request) => {
+    Util.cleanupPlaylistEntries(request.object);
 })

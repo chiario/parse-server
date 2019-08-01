@@ -3,7 +3,7 @@
 *                                  LRU CACHE                                   *
 *                                                                              *
  ******************************************************************************/
-const parseObject = require('./parseObject.js')
+const ParseObject = require('./parseObject.js')
 var Yallist = require('yallist')
 
 module.exports = LRUCache
