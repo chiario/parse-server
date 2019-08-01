@@ -8,6 +8,7 @@
 
 const util = require('./util/utilFunctions.js')
 const parseObject = require('./util/parseObject.js')
+const Cache = require('./util/cache.js')
 
 Parse.Cloud.job("buildSearchCache", async (request) => {
     request.message("Job started");
@@ -53,6 +54,24 @@ Parse.Cloud.job("consolidateSearchCache", async (request) => {
     return;
 });
 
+Parse.Cloud.job("loadSearchCache", async (request) => {
+    request.message("Job started");
+
+    const caches = await getAllSearchCaches();
+
+    request.message("Got the cached searches!");
+
+    for (const cache of caches) {
+        request.message(`Loading results for ${cache.get("query")}`);
+        Cache.searchCache.set(cache.get("query"), cache.get("song"));
+    }
+
+    request.message(`Finished loading cache!`);
+
+    return;
+});
+
+
 Parse.Cloud.job("removeSongURLPrefixes", async (request) => {
     request.message("Job started");
 
@@ -73,6 +92,31 @@ Parse.Cloud.job("removeSongURLPrefixes", async (request) => {
 
     return;
 });
+
+async function getAllSearchCaches() {
+    var result = [];
+    var skip = false;
+    const chunk_size = 1000;
+
+    while (true) {
+        // Get the next chunk
+        const cacheQuery = new Parse.Query(parseObject.SearchCache);
+        cacheQuery.ascending("objectId");
+        if (skip) cacheQuery.greaterThan("objectId", skip);
+        cacheQuery.limit(chunk_size);
+        cacheQuery.include("songs");
+        const chunk = await cacheQuery.find();
+
+        result = result.concat(chunk);
+        if (chunk.length === chunk_size) {
+            skip = chunk[chunk.length - 1].id;
+        } else {
+            break;
+        }
+    }
+
+    return result;
+}
 
 async function getAll(type) {
     var result = [];
