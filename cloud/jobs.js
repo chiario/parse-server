@@ -8,6 +8,7 @@
 
 const util = require('./util/utilFunctions.js')
 const parseObject = require('./util/parseObject.js')
+const Cache = require('./util/cache.js')
 
 Parse.Cloud.job("buildSearchCache", async (request) => {
     request.message("Job started");
@@ -52,6 +53,24 @@ Parse.Cloud.job("consolidateSearchCache", async (request) => {
 
     return;
 });
+
+Parse.Cloud.job("loadSearchCache", async (request) => {
+    request.message("Job started");
+
+    const caches = await getAll(parseObject.SearchCache);
+
+    request.message("Got the cached searches!");
+
+    for (const cache of caches) {
+        request.message(`Loading results for ${cache.get("query")}`);
+        Cache.searchCache.set(cache.get("query"), cache.get("songs"));
+    }
+
+    request.message(`Finished loading cache!`);
+
+    return;
+});
+
 
 Parse.Cloud.job("removeSongURLPrefixes", async (request) => {
     request.message("Job started");
