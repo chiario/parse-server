@@ -112,6 +112,9 @@ Parse.Cloud.define("leaveParty", async (request) => {
     if (util.isUserAdmin(user, party)) {
         throw "Cannot leave party if user is admin";
     }
+    const userCount = party.get("userCount");
+    party.set("userCount", userCount - 1);
+    await party.save();
 
     user.set("currParty", null);
     await user.save(null, { useMasterKey: true });
