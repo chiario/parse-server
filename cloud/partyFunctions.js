@@ -85,6 +85,10 @@ Parse.Cloud.define("joinParty", async (request) => {
         throw "A party with that join code does not exist!";
     }
     const userCount = await party.get("userCount");
+    const userLimit = await party.get("userLimit");
+    if (userCount >= userLimit) {
+      throw "The party has reached its user limit!";
+    }
     party.set("userCount", userCount + 1);
     await party.save();
 
