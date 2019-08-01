@@ -209,14 +209,6 @@ Parse.Cloud.define("savePartySettings", async (request) => {
     return party;
 })
 
-/**
- * This function counts the number of users in the user's party
- */
-Parse.Cloud.define("getPartyUserCount", async (request) => {
-    const user = request.user;
-    const party = await util.getPartyFromUser(user);
-    return party.get("userCount");
-})
 
 /**
  * This function sets the user's screen name
