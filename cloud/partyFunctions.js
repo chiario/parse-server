@@ -86,7 +86,7 @@ Parse.Cloud.define("joinParty", async (request) => {
     }
     const userCount = await party.get("userCount");
     const userLimit = await party.get("userLimit");
-    if (userCount >= userLimit) {
+    if (userLimit != 0 && userCount >= userLimit) {
         throw "The party has reached its user limit!";
     }
     party.set("userCount", userCount + 1);
