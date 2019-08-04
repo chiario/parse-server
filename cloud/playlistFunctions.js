@@ -28,7 +28,7 @@ Parse.Cloud.define("addSong", async (request) => {
     // Check if the user has reached the party's song limit
     const songLimit = party.get("songLimit");
     const songsAdded = user.get("songsAdded");
-    if (songsAdded >= songLimit) {
+    if (songLimit != 0 && songsAdded >= songLimit) {
         throw "User has reached the song limit!";
     }
     const song = new ParseObject.Song();

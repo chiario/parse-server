@@ -86,7 +86,7 @@ Parse.Cloud.define("joinParty", async (request) => {
     }
     const userCount = await party.get("userCount");
     const userLimit = await party.get("userLimit");
-    if (userCount >= userLimit) {
+    if (userLimit != 0 && userCount >= userLimit) {
         throw "The party has reached its user limit!";
     }
     party.set("userCount", userCount + 1);
@@ -194,17 +194,11 @@ Parse.Cloud.define("savePartySettings", async (request) => {
         party.set("locationEnabled", locationEnabled);
     }
     const name = request.params.name;
-    if (name != null) {
-        party.set("name", name);
-    }
+    party.set("name", name);
     const userLimit = request.params.userLimit;
-    if (userLimit != null) {
-        party.set("userLimit", userLimit);
-    }
+    party.set("userLimit", userLimit);
     const songLimit = request.params.songLimit;
-    if (songLimit != null) {
-        party.set("songLimit", songLimit);
-    }
+    party.set("songLimit", songLimit);
     await party.save();
     return party;
 })
