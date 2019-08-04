@@ -244,6 +244,16 @@ module.exports = {
         return formattedResult;
     },
 
+    cacheResults: function (query, results) {
+        let cachedIds = [];
+        for (const song of results) {
+            Cache.songCache.set(song.id, song);
+            cachedIds.push(song.id);
+        }
+        Cache.searchCache.set(query, cachedIds);
+        return results;
+    },
+
     updateEntryScore: async function (entry) {
         const numLikes = entry.get("numLikes");
 

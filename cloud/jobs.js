@@ -62,8 +62,10 @@ Parse.Cloud.job("loadSearchCache", async (request) => {
     request.message("Got the cached searches!");
 
     for (const cache of caches) {
-        request.message(`Loading results for ${cache.get("query")}`);
-        Cache.searchCache.set(cache.get("query"), cache.get("song"));
+        const query = cache.get("query");
+        request.message(`Loading results for ${query}`);
+
+        Util.cacheResults(query, cache.get("songs"))
     }
 
     request.message(`Finished loading cache!`);

@@ -19,19 +19,29 @@ Parse.Cloud.define("search", async (request) => {
 
     let cached = Cache.searchCache.get(query);
     if (cached) {
-        return cached;
+        let cachedResult = [];
+        for (let spotifyId of cached) {
+            let song = Cache.songCache.get(spotifyId);
+            if (song) {
+                cachedResult.push(song);
+            } else {
+                song = await Util.getSongById(spotifyId);
+                Cache.songCache.set(spotifyId, song);
+                cachedResult.push(song)
+            }
+        }
+        return cachedResult;
     }
 
     const cachedResult = await Util.getCachedSearch(query);
     if (cachedResult) {
-        Cache.searchCache.set(query, cachedResult);
-        return cachedResult;
+        return Util.cacheResults(query, cachedResult);
     }
 
     const token = await Util.getSpotifyToken();
     const limit = request.params.limit == null ? 20 : request.params.limit;
     const result = await Util.searchSpotify(token, query, limit);
     const formattedResult = await Util.formatSearchResult(result, query);
-    Cache.searchCache.set(query, formattedResult);
-    return formattedResult;
+
+    return Util.cacheResults(query, formattedResult);
 });
