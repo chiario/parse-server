@@ -43,37 +43,24 @@ module.exports = {
      * @param party the party whose playlist will be checked for the song
      * @return the playlist entry for the song in the specified party
      */
-    getPlaylistEntry: async function (song, party) {
-        const playlistQuery = new Parse.Query(ParseObject.PlaylistEntry);
-        playlistQuery.equalTo("party", party);
-        playlistQuery.equalTo("song", song);
-        return await playlistQuery.first();
-    },
-
-    /**
-     * Returns a song in a party's playlist
-     *
-     * @param song the song to check
-     * @param party the party whose playlist will be checked for the song
-     * @return the playlist entry for the song in the specified party
-     */
-    getEntryBySpotifyId: async function (spotifyId, party) {
-        const song = await this.getSongById(spotifyId);
-        if (song == null) {
-            return null;
+    getPlaylistEntry: async function (party, spotifyId) {
+        let playlist = Cache.playlistCache.get(party.id);
+        if (!playlist) {
+            playlist = await this.cachePlaylist(party);
         }
-        return await this.getPlaylistEntry(song, party);
+
+        return playlist.get(spotifyId);
     },
 
-    /**
-     * Returns an entry in a party's playlist
-     *
-     * @param entryId the object ID of the entry to retrieve
-     * @return the playlist entry with the given entry ID
-     */
-    getEntryById: async function (entryId) {
-        const playlistQuery = new Parse.Query(ParseObject.PlaylistEntry);
-        return await playlistQuery.get(entryId);
+    cachePlaylist: async function (party) {
+        const entries = await this.getPlaylistForParty(party);
+        const playlist = new Map();
+        for (const entry of entries) {
+            playlist.set(entry.get("song").get("spotifyId"), entry);
+        }
+
+        Cache.playlistCache.set(party.id, playlist);
+        return playlist;
     },
 
     /**
@@ -85,6 +72,12 @@ module.exports = {
      *         ID
      */
     getSongById: async function (spotifyId) {
+        // Check the song cache
+        let cachedSong = Cache.songCache.get(spotifyId);
+        if (cachedSong) {
+            return cachedSong;
+        }
+
         const songQuery = new Parse.Query(ParseObject.Song);
         songQuery.equalTo("spotifyId", spotifyId);
         return await songQuery.first();
@@ -101,14 +94,24 @@ module.exports = {
      * @return a reference to a song in the database with the same spotifyId
      */
     saveSong: async function (song) {
+        const spotifyId = song.get("spotifyId");
+
+        // Check the song cache
+        let cachedSong = Cache.songCache.get(spotifyId);
+        if (cachedSong) {
+            return cachedSong;
+        }
+
         // Check if a song with the same spotifyId is already in the database
         const songQuery = new Parse.Query(ParseObject.Song);
-        songQuery.equalTo("spotifyId", song.get("spotifyId"));
-        var cachedSong = await songQuery.first();
+        songQuery.equalTo("spotifyId", spotifyId);
+        cachedSong = await songQuery.first();
         if (!cachedSong) {
             // If not, save the song to the database
             cachedSong = await song.save();
         }
+
+        Cache.songCache.set(spotifyId, cachedSong);
         return cachedSong;
     },
 
@@ -254,13 +257,12 @@ module.exports = {
         return results;
     },
 
-    updateEntryScore: async function (entry) {
+    updateEntryScore: function (entry) {
         const numLikes = entry.get("numLikes");
 
         //TODO: integrate other factors here
 
         entry.set("score", numLikes);
-        await entry.save();
     },
 
     /**
@@ -270,29 +272,48 @@ module.exports = {
      * @param party the party the user is currently in
      * @return the party's playlist as a list of playlist entries
      */
-    getPlaylistForParty: async function (user, party) {
+    getPlaylistForParty: async function (party) {
         const playlistQuery = new Parse.Query(ParseObject.PlaylistEntry);
         playlistQuery.equalTo("party", party);
         playlistQuery.descending("score");
         playlistQuery.include("song");
-        const playlist = await playlistQuery.find();
-
-        // TODO: preferably find less sketchy way of doing this
-        const result = [];
-        for (const entry of playlist) {
-            const entryJson = entry.toJSON();
-            entryJson.className = entry.className;
-            entryJson.isLikedByUser = await this.isEntryLikedByUser(entry, user);
-            result.push(Parse.Object.fromJSON(entryJson));
-        }
-        return result;
+        return await playlistQuery.find();
     },
 
-    indicatePlaylistUpdated: async function (party, user) {
-        const playlist = await this.getPlaylistForParty(user, party);
+    addEntryToPlaylist: async function (party, entry) {
+        let playlist = Cache.playlistCache.get(party.id);
+        if (!playlist) {
+            playlist = this.cachePlaylist(party);
+        }
+
+        const spotifyId = entry.get("song").get("spotifyId");
+        playlist.set(spotifyId, entry);
+
+        this.indicatePlaylistUpdated(party);
+    },
+
+    removeEntryFromPlaylist: async function (party, entry) {
+        let playlist = Cache.playlistCache.get(party.id);
+        if (!playlist) {
+            playlist = this.cachePlaylist(party);
+        }
+
+        const spotifyId = entry.get("song").get("spotifyId");
+        playlist.delete(spotifyId, entry);
+
+        this.indicatePlaylistUpdated(party);
+    },
+
+    indicatePlaylistUpdated: async function (party) {
+        let playlist = Cache.playlistCache.get(party.id);
+        if (!playlist) {
+            playlist = this.cachePlaylist(party);
+        }
+
+        const orderedPlaylist = [...playlist.values()].sort((a, b) => { return b.get("score") - a.get("score") });
 
         party.set("playlistLastUpdatedAt", new Date());
-        party.set("cachedPlaylist", JSON.stringify(playlist));
+        party.set("cachedPlaylist", JSON.stringify(orderedPlaylist));
         await party.save();
 
         return playlist;

@@ -34,6 +34,12 @@ LRUCache.prototype.set = function (key, value) {
     }
 }
 
+LRUCache.prototype.delete = function (key) {
+    let deleteEntry = this.map.get(key);
+    this.list.removeNode(deleteEntry);
+    this.map.delete(deleteEntry.key);
+}
+
 LRUCache.prototype.get = function (key) {
     if (!this.map.has(key))
         return null;
