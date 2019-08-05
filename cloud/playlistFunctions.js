@@ -129,13 +129,14 @@ Parse.Cloud.define("setCurrentlyPlayingEntry", async (request) => {
 
     const entry = await Util.getPlaylistEntry(party, request.params.spotifyId);
     if (entry == null) {
-        throw "That entry does not exist";
+        throw 'Song is not in the playlist!';
     }
+
     const song = entry.get("song");
     party.set("currPlaying", song);
 
     await entry.destroy();
-    await Util.removeEntryFromPlaylist(party);
+    await Util.removeEntryFromPlaylist(party, entry);
     return song;
 });
 
