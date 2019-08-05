@@ -344,7 +344,15 @@ module.exports = {
         const partyQuery = new Parse.Query(ParseObject.Party);
         partyQuery.equalTo("joinCode", joinCode);
         partyQuery.include("currPlaying");
-        return await partyQuery.first();
+        const party = await partyQuery.first();
+
+        // Try getting the party from the cache
+        const cachedParty = Cache.partyCache.get(party.id);
+        if (cachedParty) {
+            return cachedParty;
+        }
+        Cache.partyCache.set(party.id, party);
+        return party;
     },
 
     getLikesForUser: async function (user) {
