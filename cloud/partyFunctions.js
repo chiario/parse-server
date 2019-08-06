@@ -120,7 +120,7 @@ Parse.Cloud.define("leaveParty", async (request) => {
     party.set("userCount", userCount - 1);
     await party.save();
 
-    user.set("currParty", null);
+    user.unset("currParty");
     await user.save(null, { useMasterKey: true });
 
     return user;
