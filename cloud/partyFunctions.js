@@ -183,24 +183,41 @@ Parse.Cloud.define("clearPartyLocation", async (request) => {
     return await party.save();
 })
 
+/**
+ * This function saves the current user's party settings
+ *
+ * @param name the new party name, or null if it has not changed
+ * @param locationEnabled the new party location setting, or null if it has not changed
+ * @param userLimit the new party user limit, or null if it has not changed
+ * @param songLimit the new party song limit, or null if it has not changed
+ *
+ * @throws an error if the current user is not the admin
+ */
 Parse.Cloud.define("savePartySettings", async (request) => {
     const user = request.user;
     const party = await Util.getPartyFromUser(user);
     if (!Util.isUserAdmin(user, party)) {
         throw "User is not the admin of their party!";
     }
+    // Retrieve the settings parameters
     const locationEnabled = request.params.locationEnabled;
+    const name = request.params.name;
+    const userLimit = request.params.userLimit;
+    const songLimit = request.params.songLimit;
+    // Only set each setting if it has changed, i.e. isn't null
     if (locationEnabled != null) {
         party.set("locationEnabled", locationEnabled);
     }
-    const name = request.params.name;
-    party.set("name", name);
-    const userLimit = request.params.userLimit;
-    party.set("userLimit", userLimit);
-    const songLimit = request.params.songLimit;
-    party.set("songLimit", songLimit);
-    await party.save();
-    return party;
+    if (name != null) {
+      party.set("name", name);
+    }
+    if (userLimit != null) {
+      party.set("userLimit", userLimit);
+    }
+    if (songLimit != null) {
+      party.set("songLimit", songLimit);
+    }
+    return await party.save();
 })
 
 /**
