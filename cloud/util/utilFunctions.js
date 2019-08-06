@@ -44,7 +44,7 @@ module.exports = {
      * @return the playlist entry for the song in the specified party
      */
     getPlaylistEntry: async function (party, spotifyId) {
-        let playlist = this.getCachedPlaylist(party)
+        let playlist = await this.getCachedPlaylist(party)
 
         return playlist.get(spotifyId);
     },
@@ -278,7 +278,7 @@ module.exports = {
     },
 
     addEntryToPlaylist: async function (party, entry) {
-        let playlist = this.getCachedPlaylist(party)
+        let playlist = await this.getCachedPlaylist(party)
 
         const spotifyId = entry.get("song").get("spotifyId");
         playlist.set(spotifyId, entry);
@@ -287,7 +287,7 @@ module.exports = {
     },
 
     removeEntryFromPlaylist: async function (party, entry) {
-        let playlist = this.getCachedPlaylist(party)
+        let playlist = await this.getCachedPlaylist(party)
 
         const spotifyId = entry.get("song").get("spotifyId");
         playlist.delete(spotifyId, entry);
@@ -296,7 +296,7 @@ module.exports = {
     },
 
     indicatePlaylistUpdated: async function (party) {
-        let playlist = this.getCachedPlaylist(party)
+        let playlist = await this.getCachedPlaylist(party)
 
         party.set("playlistLastUpdatedAt", new Date());
         party.set("cachedPlaylist", this.getPlaylistAsString(playlist));
@@ -308,7 +308,7 @@ module.exports = {
     getCachedPlaylist: async function (party) {
         let playlist = Cache.playlistCache.get(party.id);
         if (!playlist) {
-            playlist = this.cachePlaylist(party);
+            playlist = await this.cachePlaylist(party);
         }
         return playlist;
     },
