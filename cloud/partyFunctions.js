@@ -217,7 +217,8 @@ Parse.Cloud.define("savePartySettings", async (request) => {
     if (songLimit != null) {
       party.set("songLimit", songLimit);
     }
-    return await party.save();
+    await party.save();
+    return true;
 })
 
 /**
