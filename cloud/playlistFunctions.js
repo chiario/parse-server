@@ -213,10 +213,7 @@ Parse.Cloud.define("unlikeSong", async (request) => {
 Parse.Cloud.define("getCachedPlaylist", async (request) => {
     const user = request.user;
     const party = await Util.getPartyFromUser(user);
-    let playlist = Cache.playlistCache.get(party.id);
-    if (!playlist) {
-        playlist = await Util.cachePlaylist(party);
-    }
+    const playlist = await Util.getCachedPlaylist(party);
     return Util.getPlaylistAsString(playlist);
 });
 
