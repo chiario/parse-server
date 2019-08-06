@@ -210,10 +210,14 @@ Parse.Cloud.define("unlikeSong", async (request) => {
  * @throws error if the user is not in a party
  * @return a list of playlist entries
  */
-Parse.Cloud.define("getPlaylist", async (request) => {
+Parse.Cloud.define("getCachedPlaylist", async (request) => {
     const user = request.user;
     const party = await Util.getPartyFromUser(user);
-    return await Util.getPlaylistForParty(party);
+    let playlist = Cache.playlistCache.get(party.id);
+    if (!playlist) {
+        playlist = await Util.cachePlaylist(party);
+    }
+    return Util.getPlaylistAsString(playlist);
 });
 
 /**

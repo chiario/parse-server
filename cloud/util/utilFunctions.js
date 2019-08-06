@@ -310,13 +310,16 @@ module.exports = {
             playlist = this.cachePlaylist(party);
         }
 
-        const orderedPlaylist = [...playlist.values()].sort((a, b) => { return b.get("score") - a.get("score") });
-
         party.set("playlistLastUpdatedAt", new Date());
-        party.set("cachedPlaylist", JSON.stringify(orderedPlaylist));
+        party.set("cachedPlaylist", this.getPlaylistAsString(playlist));
         await party.save();
 
         return playlist;
+    },
+
+    getPlaylistAsString: function (playlist) {
+        const orderedPlaylist = [...playlist.values()].sort((a, b) => { return b.get("score") - a.get("score") });
+        return JSON.stringify(orderedPlaylist);
     },
 
     /**
