@@ -48,10 +48,6 @@ Parse.Cloud.define("addSong", async (request) => {
     Util.updateEntryScore(entry);
     await entry.save();
 
-    // Update the count of songs user has added
-    user.set("songsAdded", songsAdded + 1);
-    await user.save(null, { useMasterKey: true });
-
     await Util.addEntryToPlaylist(party, entry);
 });
 
