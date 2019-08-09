@@ -92,6 +92,8 @@ Parse.Cloud.define("setCurrentlyPlayingSong", async (request) => {
 
     const song = await Util.getSongById(request.params.spotifyId);
     if (song == null) {
+        party.set("currPlaying", null);
+        await party.save();
         throw "That song does not exist";
     }
     party.set("currPlaying", song);
