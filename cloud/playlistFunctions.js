@@ -24,13 +24,6 @@ const ParseObject = require('./util/parseObject.js')
 Parse.Cloud.define("addSong", async (request) => {
     const user = request.user;
     const party = await Util.getPartyFromUser(user);
-
-    // Check if the user has reached the party's song limit
-    const songLimit = party.get("songLimit");
-    const songsAdded = user.get("songsAdded");
-    if (songLimit != 0 && songsAdded >= songLimit) {
-        throw "User has reached the song limit!";
-    }
     const song = new ParseObject.Song();
     song.set("artist", request.params.artist);
     song.set("title", request.params.title);
