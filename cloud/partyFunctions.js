@@ -204,6 +204,7 @@ Parse.Cloud.define("savePartySettings", async (request) => {
     const name = request.params.name;
     const userLimit = request.params.userLimit;
     const songLimit = request.params.songLimit;
+    const explicitEnabled = request.params.explicitEnabled;
     // Only set each setting if it has changed, i.e. isn't null
     if (locationEnabled != null) {
         party.set("locationEnabled", locationEnabled);
@@ -216,6 +217,9 @@ Parse.Cloud.define("savePartySettings", async (request) => {
     }
     if (songLimit != null) {
       party.set("songLimit", songLimit);
+    }
+    if (explicitEnabled != null) {
+      party.set("explicitEnabled", explicitEnabled);
     }
     await party.save();
     return true;
