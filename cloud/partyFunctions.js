@@ -29,6 +29,7 @@ Parse.Cloud.define("createParty", async (request) => {
     party.set("locationEnabled", true);
     party.set("joinCode", await Util.generateJoinCode());
     party.set("userCount", 1);
+    party.set("explicitEnabled", true);
     await party.save();
 
     user.set("currParty", party);
