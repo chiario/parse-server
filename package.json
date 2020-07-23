@@ -12,7 +12,7 @@
     "express": "^4.17.1",
     "kerberos": "~0.0.x",
     "ngrok": "^3.2.2",
-    "parse": "~1.8.0",
+    "parse": "~2.10.0",
     "parse-server": "*",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.7",
